@@ -9,16 +9,20 @@ Show a few examples:
 
 MS Forms controls supported:
 - Label
-- EditBox
+- Text Box
 - Command Button
+- Frame
+- Check Box
+- Combo Box
 - List Box
+- Option Button
 - Image
-- etc, etc
+- Scroll Bar
 
 MS Forms controls not yet supported:
 - Toggle Button
 - Tab Strip
-- MultiPage
+- Multi Page
 
 Things Yet to Do:
 - Export Image source from IPicture to format readable to **twinBASIC**.
