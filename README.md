@@ -1,7 +1,7 @@
 # VBA-UserForm-to-twinBASIC
-VBE add-in for exporting VBA UserForms to twinBASIC
+A simple VBE add-in for exporting VBA UserForms to twinBASIC
 
-twinBASIC is under develeopment (beta) and does not yet support VBA UserForms. It does have its own native Form designer and associated controls. This simple VBE add-in for Excel exports the state of your UserForm and controls into a format that can be imported directly into twinBASIC.
+The new and promising twinBASIC IDE and compiler (under develeopment) does not yet support VBA UserForms. It does however have its own native Form designer and associated controls. This simple VBE add-in for Excel converts the state of your UserForm and controls as much as possible into a twinBASIC form into a format that can be imported directly into twinBASIC.
 
 Show a few examples:
 
