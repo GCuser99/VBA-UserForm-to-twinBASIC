@@ -21,5 +21,5 @@ MS Forms controls not yet supported:
 - MultiPage
 
 Things Yet to Do:
-- Export Image source from IPicture to format readable to `twinBASIC`.
+- Export Image source from IPicture to format readable to **twinBASIC**.
 - etc etc
