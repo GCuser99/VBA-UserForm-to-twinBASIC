@@ -5,18 +5,27 @@ The [twinBASIC](https://twinbasic.com/preview.html) IDE and compiler (under deve
 
 The macro queries the state of the UserForm and each of its child controls at design time and builds the closest **twinBASIC** equivalent. For non-MSForm controls or MSForm controls not supported (see below), a **twinBASIC** label control is substituted to flag the missing control. UserForm code is (at least partially) translated and exported in a format that can be imported into **twinBASIC**, along with the form. 
 
-This imported form and code may have to be tweaked in **twinBASIC** to work as desired, but at least the position and most property states will be converted, saving time and some tedious effort.
-
-<img src="https://github.com/GCuser99/VBA-UserForm-to-twinBASIC/blob/main/images/nested_controls.png" alt="NestedControls" width=75% height=75%>
+The resulting imported form and code may have to be tweaked in **twinBASIC** to work as desired, but at least the position and most property states will be converted, saving time and some tedious effort.
 
 MS Forms controls supported: Label, TextBox, CommandButton, Frame, CheckBox, ComboBox, ListBox, OptionButton, Image, ScrollBar, SpinButton
 
 MS Forms controls not yet supported: ToggleButton, TabStrip, MultiPage
 
-Things Yet to Do:
-- Handle picture data for Image and other controls that accept it
-- Create INNO installer
+<img src="https://github.com/GCuser99/VBA-UserForm-to-twinBASIC/blob/main/images/nested_controls.png" alt="NestedControls" width=75% height=75%>
 
-### Quick How-To
+**Example**: Comparison of VBA UserForm (left) and converted twinBASIC form (right)
+
+## Things Yet to Do:
+
+- Handle picture data for Image and other controls that accept it
+- Create Inno installer
+
+## Quick How-To-Use
+
+1) Depending on the bit-ness of your Office app, copy either 32-bit or 64-bit version of files in the [dist folder] (https://github.com/GCuser99/VBA-UserForm-to-twinBASIC/tree/main/dist) of this repo to a location of your choice.
+2) Make sure to close all MS Office applications.
+3) Run the appropriate register*.bat file to register the add-in.
+4) Open an MS Office document that contains UserForms (such as the test.xlsm file in the [test folder] (https://github.com/GCuser99/VBA-UserForm-to-twinBASIC/tree/main/test)
+5) Open the Visual Basic Editor
 <img src="https://github.com/GCuser99/VBA-UserForm-to-twinBASIC/blob/main/images/converter%20dialog.png" alt="ConverterDialog" width=35% height=35%>
 
