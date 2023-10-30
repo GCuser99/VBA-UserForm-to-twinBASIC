@@ -40,9 +40,9 @@ MS Forms controls not yet supported: ToggleButton, TabStrip, MultiPage
 11) You will be prompted where to save the processed twinBASIC files - there should be two resulting files per UserForm - a .tbForm and a .twin file.
 12) Import the twinBASIC files into twinBASIC IDE.
 
-<img src="https://github.com/GCuser99/VBA-UserForm-to-twinBASIC/blob/main/images/VBIDE%20Menu.png" alt="ConverterDialog" width=35% height=35%>
+<img src="https://github.com/GCuser99/VBA-UserForm-to-twinBASIC/blob/main/images/VBIDE%20Menu.png" alt="Menu" width=35% height=35%>
 
-<img src="https://github.com/GCuser99/VBA-UserForm-to-twinBASIC/blob/main/images/addin%window.png" alt="ConverterDialog" width=35% height=35%>
+<img src="https://github.com/GCuser99/VBA-UserForm-to-twinBASIC/blob/main/images/addin%20window.png" alt="AddinManagerDialog" width=35% height=35%>
     
 <img src="https://github.com/GCuser99/VBA-UserForm-to-twinBASIC/blob/main/images/converter%20dialog.png" alt="ConverterDialog" width=35% height=35%>
 
