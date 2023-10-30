@@ -52,3 +52,8 @@ The resulting imported form and code may have to be tweaked in **twinBASIC** to 
 
 **Convert Dialog**: The UserForm Converter dialog allows to select the UserForm(s) for conversion.
 
+## Credits
+
+- Wayne Phillips' timeBASIC Sample 4: MyVBEAddin
+- Tim Hall's JsonConverter (https://github.com/VBA-tools/VBA-JSON/blob/master/JsonConverter.bas)
+- Mike Wolfe's createGUID (https://nolongerset.com/createguid/)
