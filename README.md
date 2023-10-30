@@ -17,7 +17,7 @@ The resulting imported form and code may have to be tweaked in **twinBASIC** to 
 
 ## Requirements:
 
-- Windows 64-bit
+- 64-bit MS Windows
 - MS Office 2010 or later, 32/64-bit
 
 ## Things Yet to Do:
