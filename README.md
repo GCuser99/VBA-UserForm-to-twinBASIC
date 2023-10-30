@@ -30,3 +30,6 @@ MS Forms controls not yet supported:
 Things Yet to Do:
 - Export Image source from IPicture to format readable to **twinBASIC**.
 - etc etc
+
+<img src="https://github.com/GCuser99/VBA-UserForm-to-twinBASIC/blob/main/images/converter%20dialog.png" alt="ConverterDialog" width=50% height=50%>
+
