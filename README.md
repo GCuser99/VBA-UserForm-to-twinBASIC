@@ -9,27 +9,14 @@ This imported form and code may have to be tweaked in **twinBASIC** to work as d
 
 <img src="https://github.com/GCuser99/VBA-UserForm-to-twinBASIC/blob/main/images/nested_controls.png" alt="NestedControls" width=75% height=75%>
 
-MS Forms controls supported:
-- Label
-- TextBox
-- CommandButton
-- Frame
-- CheckBox
-- ComboBox
-- ListBox
-- OptionButton
-- Image
-- ScrollBar
-- SpinButton
+MS Forms controls supported: Label, TextBox, CommandButton, Frame, CheckBox, ComboBox, ListBox, OptionButton, Image, ScrollBar, SpinButton
 
-MS Forms controls not yet supported:
-- ToggleButton
-- TabStrip
-- MultiPage
+MS Forms controls not yet supported: ToggleButton, TabStrip, MultiPage
 
 Things Yet to Do:
-- Export Image source from IPicture to format readable to **twinBASIC**.
-- etc etc
+- Handle picture data for Image and other controls that accept it
+- Create INNO installer
 
+### Quick How-To
 <img src="https://github.com/GCuser99/VBA-UserForm-to-twinBASIC/blob/main/images/converter%20dialog.png" alt="ConverterDialog" width=35% height=35%>
 
