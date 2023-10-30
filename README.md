@@ -7,9 +7,9 @@ The macro queries the state of the UserForm and each of its child controls at de
 
 The resulting imported form and code may have to be tweaked in **twinBASIC** to work as desired, but at least the position and most property states will be converted, saving time and some tedious effort.
 
-**MS Forms controls supported**: Label, TextBox, CommandButton, Frame, CheckBox, ComboBox, ListBox, OptionButton, Image, ScrollBar, SpinButton.
+**MS Forms controls supported**: Label, TextBox, CommandButton, Frame, CheckBox, ComboBox, ListBox, OptionButton, Image, ScrollBar, and SpinButton.
 
-**MS Forms controls not yet supported**: ToggleButton, TabStrip, MultiPage.
+**MS Forms controls not yet supported**: ToggleButton, TabStrip, and MultiPage.
 
 <img src="https://github.com/GCuser99/VBA-UserForm-to-twinBASIC/blob/main/images/nested_controls.png" alt="NestedControls" width=75% height=75%>
 
