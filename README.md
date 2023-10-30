@@ -1,7 +1,7 @@
 # VBA-UserForm-to-twinBASIC
 A VBIDE add-in (complied with [twinBASIC](https://twinbasic.com/preview.html)) that converts VBA UserForms for use in **twinBASIC**.
 
-The [twinBASIC](https://twinbasic.com/preview.html) IDE and compiler (under development) does not yet support VBA UserForms. It does however have its own excellent native Form designer and associated controls. This simple VBIDE add-in for MS Office applications converts (as much as is possible) a UserForm and its controls into a **twinBASIC** form that can be imported directly into **twinBASIC**. 
+The [twinBASIC](https://twinbasic.com/preview.html) IDE and compiler (under development) does not yet support VBA UserForms. It does however have its own excellent native Form designer and associated controls. This simple VBIDE add-in for MS Office applications converts (as much as is possible) a UserForm, its controls, and code into a **twinBASIC** form that can be imported directly into **twinBASIC**. 
 
 The macro queries the state of the UserForm and each of its child controls at design time and builds the closest **twinBASIC** equivalent. For non-MSForm controls or MSForm controls not supported (see below), a **twinBASIC** label control is substituted to flag the missing control. UserForm code is (at least partially) translated and exported in a format that can be imported into **twinBASIC**, along with the form. 
 
@@ -42,13 +42,13 @@ The resulting imported form and code may have to be tweaked in **twinBASIC** to 
 
 <img src="https://github.com/GCuser99/VBA-UserForm-to-twinBASIC/blob/main/images/VBIDE%20Menu.png" alt="Menu" width=35% height=35%>
 
-**VBIDE Menu**: Comparison of VBA UserForm (left) and converted twinBASIC form (right)
+**VBIDE Menu**: After install, the twinBasic Tools menu item should show on the right side of the VBA menu.
 
 <img src="https://github.com/GCuser99/VBA-UserForm-to-twinBASIC/blob/main/images/addin%20window.png" alt="AddinManagerDialog" width=35% height=35%>
 
-**Add-in Manager**: Comparison of VBA UserForm (left) and converted twinBASIC form (right)
+**Add-in Manager**: You can change the load behavoir of the Add-in by clicking  Add-ins --> Add-in Manager
     
 <img src="https://github.com/GCuser99/VBA-UserForm-to-twinBASIC/blob/main/images/converter%20dialog.png" alt="ConverterDialog" width=35% height=35%>
 
-**Convert Dialog**: Comparison of VBA UserForm (left) and converted twinBASIC form (right)
+**Convert Dialog**: The UserForm Converter dialog allows to select the UserForm(s) for conversion.
 
