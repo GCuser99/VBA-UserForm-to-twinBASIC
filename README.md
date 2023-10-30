@@ -1,5 +1,5 @@
 # VBA-UserForm-to-twinBASIC
-A VBIDE add-in (complied with [twinBASIC](https://twinbasic.com/preview.html)) that converts VBA UserForms for use in **twinBASIC**.
+A VBIDE add-in (compiled with [twinBASIC](https://twinbasic.com/preview.html)) that converts VBA UserForms for use in **twinBASIC**.
 
 The [twinBASIC](https://twinbasic.com/preview.html) IDE and compiler (under development) does not yet support VBA UserForms. It does however have its own excellent native Form designer and associated controls. This simple VBIDE add-in for MS Office applications converts (as much as is possible) a UserForm, its controls, and code into a **twinBASIC** form that can be imported directly into **twinBASIC**. 
 
@@ -36,7 +36,7 @@ The resulting imported form and code may have to be tweaked in **twinBASIC** to 
 7) If menu not visible, then click on Add-ins --> Add-in Manager.
 8) In Add-in Manager window, click on tbUserFormConverter Add-in, and then make sure "Loaded/Unloaded" is checked - this will toggle on the "twinBasic Tools" menu item.
 9) Click on "twinBasic Tools" menu, then "Convert UserForm".
-10) In the dialog that pops up, select the UserForms that you want to convert, and then hit Convert button.
+10) In the dialog that pops up, select the UserForm(s) that you want to convert, and then hit Convert button.
 11) You will be prompted where to save the processed twinBASIC files - there should be two resulting files per UserForm - a .tbForm and a .twin file.
 12) Import the twinBASIC files into twinBASIC IDE for inspection and use.
 
