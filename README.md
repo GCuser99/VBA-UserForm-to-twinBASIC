@@ -42,7 +42,13 @@ MS Forms controls not yet supported: ToggleButton, TabStrip, MultiPage
 
 <img src="https://github.com/GCuser99/VBA-UserForm-to-twinBASIC/blob/main/images/VBIDE%20Menu.png" alt="Menu" width=35% height=35%>
 
+**VBIDE Menu**: Comparison of VBA UserForm (left) and converted twinBASIC form (right)
+
 <img src="https://github.com/GCuser99/VBA-UserForm-to-twinBASIC/blob/main/images/addin%20window.png" alt="AddinManagerDialog" width=35% height=35%>
+
+**Add-in Manager**: Comparison of VBA UserForm (left) and converted twinBASIC form (right)
     
 <img src="https://github.com/GCuser99/VBA-UserForm-to-twinBASIC/blob/main/images/converter%20dialog.png" alt="ConverterDialog" width=35% height=35%>
+
+**Convert Dialog**: Comparison of VBA UserForm (left) and converted twinBASIC form (right)
 
