@@ -20,11 +20,6 @@ The resulting imported form and code may have to be tweaked in **twinBASIC** to 
 - 64-bit MS Windows
 - MS Office 2010 or later, 32/64-bit
 
-## Things Yet to Do:
-
-- Handle picture data for Image and other controls that accept it
-- Create Inno installer
-
 ## Quick How-To-Use
 
 1) Depending on the bit-ness of your Office app, copy either 32-bit or 64-bit version of files in the [dist folder](https://github.com/GCuser99/VBA-UserForm-to-twinBASIC/tree/main/dist) of this repo to a location of your choice.
@@ -51,6 +46,11 @@ The resulting imported form and code may have to be tweaked in **twinBASIC** to 
 <img src="https://github.com/GCuser99/VBA-UserForm-to-twinBASIC/blob/main/images/converter%20dialog.png" alt="ConverterDialog" width=35% height=35%>
 
 **Convert Dialog**: The UserForm Converter dialog allows to select the UserForm(s) for conversion.
+
+## Things Yet to Do:
+
+- Handle picture data for Image and other controls that accept it
+- Create Inno installer
 
 ## Credits
 
