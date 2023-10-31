@@ -5,7 +5,7 @@ The [twinBASIC](https://twinbasic.com/preview.html) IDE and compiler (under deve
 
 The macro queries the state of the UserForm and each of its child controls at design time and builds the closest **twinBASIC** equivalent. For non-MSForm controls or MSForm controls not supported (see below), a **twinBASIC** label control is substituted to flag the missing control. UserForm code is (at least partially) translated and exported in a format that can be imported into **twinBASIC**, along with the form. 
 
-The resulting imported form and code may have to be tweaked in **twinBASIC** to work as desired, but at least the position and most property states will be converted, saving time and some tedious effort.
+The resulting imported form and code may have to be tweaked in **twinBASIC** to work as desired, but at least the position and most property states will be converted, saving some time and tedious effort.
 
 **MS Forms controls supported**: Label, TextBox, CommandButton, Frame, CheckBox, ComboBox, ListBox, OptionButton, Image, ScrollBar, and SpinButton.
 
