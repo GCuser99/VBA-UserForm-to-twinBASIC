@@ -54,7 +54,7 @@ The resulting imported form and code may have to be tweaked in **twinBASIC** to 
 - Handle picture data for Image and other controls that accept it
 - Create Inno installer
 
-## Credits
+## Acknowledgements
 
 - Wayne Phillips' [twinBASIC](https://twinbasic.com/preview.html) and Sample 4: MyVBEAddin
 - Tim Hall's [JsonConverter](https://github.com/VBA-tools/VBA-JSON/tree/master)
