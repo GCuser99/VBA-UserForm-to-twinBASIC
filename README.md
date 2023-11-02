@@ -13,7 +13,7 @@ The resulting imported form and code may have to be tweaked in **twinBASIC** to 
 
 **MS Forms controls not yet supported**: ToggleButton, TabStrip, and MultiPage.
 
-<img src="https://github.com/GCuser99/VBA-UserForm-to-twinBASIC/blob/main/images/nested_controls.png" alt="NestedControls" width=75% height=75%>
+<img src="https://github.com/GCuser99/VBA-UserForm-to-twinBASIC/blob/main/images/nested_controls.png" alt="NestedControls" width=80% height=80%>
 
 **Example**: Comparison of VBA UserForm (left) and converted twinBASIC form (right)
 
