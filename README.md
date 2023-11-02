@@ -5,7 +5,7 @@ A VBIDE add-in (compiled with [twinBASIC](https://twinbasic.com/preview.html)) t
 
 The [twinBASIC](https://twinbasic.com/preview.html) IDE and compiler (under development) does not yet support VBA UserForms. It does however have its own excellent native Form designer and associated controls. This simple VBIDE add-in for MS Office applications converts (as much as is possible) a UserForm, its controls, and code into a **twinBASIC** form that can be imported directly into **twinBASIC**. 
 
-The macro queries the state of the UserForm and each of its child controls at design time and builds the closest **twinBASIC** equivalent. For non-MS Form controls or MS Form controls not supported (see below), a **twinBASIC** label or Frame control is substituted to flag the missing control. UserForm code is (at least partially) translated and exported in a format that can be imported into **twinBASIC**, along with the form. 
+The macro queries the state of the UserForm and each of its child controls at design time and builds the closest **twinBASIC** equivalent. For non-MS Form controls or MS Form controls not supported (see below), a **twinBASIC** Label or Frame control is substituted to flag the missing control. UserForm code is (at least partially) translated and exported in a format that can be imported into **twinBASIC**, along with the form. 
 
 The resulting imported form and code may have to be tweaked in **twinBASIC** to work as desired, but at least the position and most property states will be converted, saving some time and tedious effort.
 
