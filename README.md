@@ -37,13 +37,13 @@ The resulting imported form and code may have to be tweaked in **twinBASIC** to 
 11) You will be prompted where to save the processed twinBASIC files - there should be two resulting files per UserForm - a .tbForm and a .twin file.
 12) Import the twinBASIC files into twinBASIC IDE for inspection and use.
 
-<img src="https://github.com/GCuser99/VBA-UserForm-to-twinBASIC/blob/main/images/VBIDE%20Menu.png" alt="Menu" width=50% height=50%>
-
-**VBIDE Menu**: After install, the twinBasic Tools menu item should show on the right side of the VBA menu.
-
 <img src="https://github.com/GCuser99/VBA-UserForm-to-twinBASIC/blob/main/images/addin%20window.png" alt="AddinManagerDialog" width=50% height=50%>
 
 **Add-in Manager**: You can change the load behavoir of the Add-in by clicking  Add-ins --> Add-in Manager
+
+<img src="https://github.com/GCuser99/VBA-UserForm-to-twinBASIC/blob/main/images/VBIDE%20Menu.png" alt="Menu" width=50% height=50%>
+
+**VBIDE Menu**: After install, the twinBasic Tools menu item should show on the right side of the VBA menu.
     
 <img src="https://github.com/GCuser99/VBA-UserForm-to-twinBASIC/blob/main/images/converter%20dialog.png" alt="ConverterDialog" width=50% height=50%>
 
