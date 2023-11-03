@@ -51,7 +51,7 @@ The resulting imported form and code may have to be tweaked in **twinBASIC** to 
 
 ## Things Yet to Do:
 
-- Handle picture data for Image and other controls that accept it
+- Handle Mouse Icon images
 - Create Inno installer
 
 ## Acknowledgements
