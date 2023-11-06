@@ -41,10 +41,12 @@ Private Sub ListBox1_Click()
 End Sub
 
 Private Sub OptionButton1_Click()
+    Label1.Caption = "Answer A) is Incorrect!"
     Label1.Visible = True
 End Sub
 
 Private Sub OptionButton2_Click()
+    Label1.Caption = "Answer B) is Incorrect!"
     Label1.Visible = True
 End Sub
 
