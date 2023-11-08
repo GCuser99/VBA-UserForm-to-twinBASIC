@@ -92,7 +92,6 @@ Private Sub UserForm_Initialize()
     ComboBox1.ListIndex = 0
     ComboBox1_Change
     Label1.Visible = False
-    
     ScrollBar2.Min = Label5.Top
     ScrollBar2.Max = Label6.Top
     ScrollBar2.SmallChange = (ScrollBar2.Max - ScrollBar2.Min) / 10
