@@ -28,10 +28,10 @@ The resulting imported form and code may have to be tweaked in **twinBASIC** to 
 2) Run the included tBUserformConverterSetup.exe Inno installer.
 3) Open an MS Office document that contains UserForm(s) to be converted.
 4) Open the Visual Basic for Application IDE.
-5) You should see the "twinBasic Tools" menu item on the far right of the main menu bar.
+5) You should see the "twinBASIC Tools" menu item on the far right of the main menu bar.
 6) If menu not visible, then click on "Add-ins->Add-in Manager".
 7) In Add-in Manager window, click on tbUserFormConverter Add-in, and then make sure "Loaded/Unloaded" is checked - this will toggle on the "twinBasic Tools" menu item.
-8) Click on "twinBasic Tools" menu, then "Convert UserForm".
+8) Click on "twinBASIC Tools" menu, then "Convert UserForm".
 9) In the dialog that pops up, select the UserForm(s) that you want to convert, and then hit Convert button.
 10) You will be prompted where to save the processed twinBASIC files - there should be two resulting files per UserForm - a .tbform and a .twin file.
 11) Import the twinBASIC files into twinBASIC IDE (Project->Add->Import File(s)…).
