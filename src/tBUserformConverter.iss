@@ -19,7 +19,7 @@
 #define LicenseFilePath "..\..\..\GitHub\VBA-UserForm-to-twinBASIC\LICENSE.txt"
 #define TestFolderPath "..\test_documents"
 #define LogoFilePath "..\logo\logo_setup.bmp"
-#define RequirementsFilePath ".\readme.rtf"
+#define RequirementsFilePath ".\readme.txt"
 #define SetupOutputFolderPath "..\..\..\GitHub\VBA-UserForm-to-twinBASIC\dist" 
 #define AppVersion GetVersionNumbersString(DLL64FilePath)
 // The following definition points to the path of 
