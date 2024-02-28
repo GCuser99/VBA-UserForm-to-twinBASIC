@@ -30,7 +30,7 @@ The resulting imported form and code may have to be tweaked in **twinBASIC** to 
 4) Open the Visual Basic for Application IDE.
 5) You should see the "twinBASIC Tools" menu item on the far right of the main menu bar.
 6) If menu not visible, then click on "Add-ins->Add-in Manager".
-7) In Add-in Manager window, click on tbUserFormConverter Add-in, and then make sure "Loaded/Unloaded" is checked - this will toggle on the "twinBasic Tools" menu item.
+7) In Add-in Manager window, click on tbUserFormConverter Add-in, and then make sure "Loaded/Unloaded" is checked - this will toggle on the "twinBASIC Tools" menu item.
 8) Click on "twinBASIC Tools" menu, then "Convert UserForm".
 9) In the dialog that pops up, select the UserForm(s) that you want to convert, and then hit Convert button.
 10) You will be prompted where to save the processed twinBASIC files - there should be two resulting files per UserForm - a .tbform and a .twin file.
@@ -52,7 +52,6 @@ The resulting imported form and code may have to be tweaked in **twinBASIC** to 
 
 - Wayne Phillips' [twinBASIC](https://twinbasic.com/preview.html) and Sample 4: MyVBEAddin
 - Tim Hall's [JsonConverter](https://github.com/VBA-tools/VBA-JSON/tree/master)
-- Mike Wolfe's [createGUID](https://nolongerset.com/createguid/)
-- Krool's [VBCCR](https://github.com/Kr00l/VBCCR)
-- R. Beltran's [ArrayList](https://github.com/Theadd/ArrayList)
+- Krool's [VBCCR](https://github.com/Kr00l/VBCCR) twinBASIC package
+- R. Beltran's [ArrayList](https://github.com/Theadd/ArrayList) twinBASIC package
 - Jordan Russell's [Inno Setup](https://jrsoftware.org/isinfo.php) and Bill Stewart's [UninsIS](https://github.com/Bill-Stewart/UninsIS)
