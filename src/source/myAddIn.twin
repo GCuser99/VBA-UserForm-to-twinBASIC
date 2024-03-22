@@ -1,0 +1,116 @@
+' NOTE: make sure you create a DLL of the correct bitness to match your version of VBA
+' (e.g. if you're using the 64-bit version of VBA, make sure you change the active build to 'win64'
+
+[ClassId("29095D85-F3EE-4D3D-922F-A3B990A9C776")]
+[InterfaceId("EDB4AF2E-5890-4BB8-939A-8FF86C493B3A")]
+[EventInterfaceId("866F2BF1-6AEB-4BC2-A6DB-7EECF2CFEE66")]
+Class myAddIn
+ 
+	Implements IDTExtensibility2
+	
+	Private vbe As VBIDE.VBE
+   	Private addin As VBIDE.AddIn
+    Private WithEvents menuItem1Events  As VBIDE.CommandBarEvents
+    Private WithEvents menuItem2Events  As VBIDE.CommandBarEvents
+    Private isConnected As Boolean
+    
+	Sub OnConnection(ByVal Application As Object, _
+							ByVal ConnectMode As ext_ConnectMode, _
+							ByVal AddInInst As Object, _
+							ByRef custom As Variant()) _
+							Implements IDTExtensibility2.OnConnection
+        Set vbe = Application
+		Set addin = AddInInst
+        isConnected = True
+        CreateVBEMenu()
+	End Sub
+	                          
+    Sub OnDisconnection(ByVal RemoveMode As ext_DisconnectMode, _
+                            ByRef custom As Variant()) _
+                            Implements IDTExtensibility2.OnDisconnection
+        ShutdownAddin()
+    End Sub
+
+ 	Sub OnBeginShutdown(ByRef custom As Variant()) _
+						Implements IDTExtensibility2.OnBeginShutdown
+        ShutdownAddin()     ' the earlier we release everything back to VBIDE, the better
+	End Sub
+                                                                             	                                                       
+	Sub OnAddInsUpdate(ByRef custom As Variant()) _
+						Implements IDTExtensibility2.OnAddInsUpdate
+	End Sub
+	           
+	Sub OnStartupComplete(ByRef custom As Variant()) _
+						Implements IDTExtensibility2.OnStartupComplete
+        ' When opening the addin manually (with Load on Startup off), this won't be triggered
+	End Sub
+
+    Private Sub ShutdownAddin()
+        If isConnected = False Then Exit Sub
+        RemoveVBEMenu
+        Set addin = Nothing
+        Set vbe = Nothing
+        Set menuItem1Events = Nothing
+        Set menuItem2Events = Nothing
+        isConnected = False
+    End Sub
+
+    Public Property Get GetVBE() As VBIDE.VBE
+    	Return vbe
+    End Property
+    
+    Private Sub CreateVBEMenu()
+        Dim menu As CommandBarPopup
+        Dim menuItem1 As CommandBarButton
+        Dim menuItem2 As CommandBarButton
+        
+        Set menu = vbe.CommandBars("Menu Bar").Controls.Add(Type:=msoControlPopup)
+        With menu
+            menu.Caption = "twin&BASIC Tools"
+            menu.Tag = "twinBASICTools"
+            Set menuItem1 = .Controls.Add(Type:=msoControlButton)
+            With menuItem1
+                .Caption = "&Convert UserForms"
+                Set menuItem1Events = vbe.Events.CommandBarEvents(menuItem1)
+            End With
+            Set menuItem2 = .Controls.Add(Type:=msoControlButton)
+            With menuItem2
+                .Caption = "&About"
+                Set menuItem2Events = vbe.Events.CommandBarEvents(menuItem2)
+            End With
+        End With
+    End Sub
+
+    Private Sub RemoveVBEMenu()
+    	'also can clean up menu in vbide during debug by rmb click on menu
+        'Customize->Menu Bar->Reset
+        /*
+        Dim ctl As Object
+        Do
+            Set ctl = vbe.CommandBars("Menu Bar").FindControl(Tag:="twinBASICTools")
+            If ctl IsNot Nothing Then
+                ctl.Delete
+            End If
+        Loop Until ctl Is Nothing
+        'below can replace above loop, after debugging phase is complete
+        */
+        'vbe.CommandBars("Menu Bar").Reset 'this will clean up all 
+        vbe.CommandBars("Menu Bar").Controls("twinBASIC Tools").Delete
+    End Sub
+    
+    Private Sub menuItem1Events_Click(ByVal CommandBarControl As Object, _
+                ByRef Handled As Boolean, ByRef CancelDefault As Boolean) Handles menuItem1Events.Click
+        exportUserForm Me.GetVBE().ActiveVBProject
+        Handled = True
+        CancelDefault = False
+    End Sub
+    
+    Private Sub menuItem2Events_Click(ByVal CommandBarControl As Object, _
+                ByRef Handled As Boolean, ByRef CancelDefault As Boolean) Handles menuItem2Events.Click
+        About.Show(vbModal)
+        Set About = Nothing
+        Handled = True
+        CancelDefault = False
+    End Sub
+    
+End Class

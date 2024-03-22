@@ -1,0 +1,65 @@
+[Description("")]
+[FormDesignerId("BCA94248-FB88-D34B-AE3D-E887439ECECF")]
+[PredeclaredId]
+
+Class Converter
+
+	Private mCancelPressed As Boolean
+	Private mUserFormSelected As Boolean
+	
+	Public Property Get CancelPressed() As Boolean
+	    CancelPressed = mCancelPressed
+	End Property
+	
+	Private Sub cmdConvert_Click()
+	    Me.Hide
+	End Sub
+	
+	Private Sub cmdCancel_Click()
+	    mCancelPressed = True
+	    Me.Hide
+	End Sub
+	
+	Private Sub cmdDeselectAll_Click()
+	    Dim i As Long
+	    For i = 0 To Me.lbxDialogs.ListCount - 1
+	        Me.lbxDialogs.Selected(i) = False
+	    Next i
+	    cmdConvert.Enabled = False
+	    cmdDeselectAll.Enabled = False
+	End Sub
+	
+	Private Sub cmdSelectAll_Click()
+	    Dim i As Long
+	    For i = 0 To Me.lbxDialogs.ListCount - 1
+	        Me.lbxDialogs.Selected(i) = True
+	    Next i
+	End Sub
+	
+	Private Sub lbxDialogs_Click()
+        mUserFormSelected = True
+        If Me.lbxDialogs.ListCount > 0 Then
+            cmdConvert.Enabled = True
+            cmdDeselectAll.Enabled = True
+        Else
+            cmdConvert.Enabled = False
+            cmdDeselectAll.Enabled = False
+        End If
+	End Sub
+	
+	Private Sub New()
+	    cmdConvert.Enabled = False
+	    ckbOutputCode.Value = vbChecked
+	    cmdDeselectAll.Enabled = False
+        ckbUseVisualStyles.Value = vbUnchecked
+        ckb3DAppearance.Value = vbChecked
+        optUseVBAFonts.Value = True
+        ckbHideIconBox.Value = vbChecked
+        Set Me.Icon = GetImageFromResources("twinBASIC.ico", "IMAGES")
+	End Sub
+	
+	Private Sub Form_QueryUnload(Cancel As Integer, UnloadMode As Integer)
+	    If UnloadMode = 0 Then mCancelPressed = True: Cancel = True: Me.Hide
+	End Sub
+
+End Class

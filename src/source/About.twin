@@ -1,0 +1,22 @@
+[Description("")]
+[FormDesignerId("AD8254FE-96CD-45BA-9FFC-44D12AFE5BBB")]
+[PredeclaredId]
+Class About
+
+	Sub New()
+    	lblInfo.Caption = "Author: GCUser99" & vbCrLf & _  
+        "Version: v2.1" & vbCrLf & _  
+        "Description: A VBIDE add-in (complied with twinBASIC) that converts VBA UserForms for use in twinBASIC."
+        lblWebsite.Caption = "https://github.com/GCuser99/VBA-UserForm-to-twinBASIC"
+        Set Me.Icon = GetImageFromResources("transparent.ico", "IMAGES")
+    End Sub
+    
+    Private Sub cmdOK_Click()
+        Me.Close
+    End Sub
+    
+    Private Sub Form_QueryUnload(Cancel As Integer, UnloadMode As Integer)
+        If UnloadMode = 0 Then Cancel = True: Me.Close
+    End Sub
+    
+End Class
