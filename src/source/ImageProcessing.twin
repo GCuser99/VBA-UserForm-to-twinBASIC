@@ -25,12 +25,19 @@ Module ImageProcessing
     Const CRYPT_STRING_NOCRLF As Long = &H40000000& 'Do not append any new line characters to the encoded string.
     Const CRYPT_STRING_NOCR As Long = &H80000000& 'Only use the line feed (LF) character (0x0A) for a new line.
      
+    Private Enum PictureTypeConstants
+        vbPicTypeNone = 0
+        vbPicTypeBitmap = 1
+        vbPicTypeMetafile = 2
+        vbPicTypeIcon = 3
+        vbPicTypeEMetafile = 4
+    End Enum
+    
     Public Function GetImageString(pic As stdole.IPictureDisp) As String
         Dim bytes() As Byte
         If pic Is Nothing Then Exit Function
         bytes = BytesFromPicture(pic)
-        'offset determined through some reverse engineering...
-        GetImageString = Mid(ToBase64Array(bytes), 73)
+        GetImageString = ToBase64Array(bytes)
     End Function
 
     Public Function ToBase64Array(bytes() As Byte) As String
@@ -46,9 +53,11 @@ Module ImageProcessing
 
     Public Function BytesFromPicture(pic As IPictureDisp) As Byte()
         Dim pb As PropertyBag
+        Dim headerOffset As Long = 55
         Set pb = New PropertyBag
         pb.WriteProperty "Image", pic
-        BytesFromPicture = pb.Contents
+        'skip the stdPicture header on output
+        BytesFromPicture = MidB(pb.Contents, headerOffset)
     End Function
     
     Public Function GetTransparentIconString() As String
