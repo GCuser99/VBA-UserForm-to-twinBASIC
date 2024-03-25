@@ -4,3 +4,5 @@
 *.frm text eol=crlf linguist-language=VBA
 *.vbs text eol=crlf linguist-language=VBScript
 *.iss text eol=crlf
+*.twin text eol=crlf
+*.tbform text eol=crlf
