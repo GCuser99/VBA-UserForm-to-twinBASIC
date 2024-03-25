@@ -38,7 +38,7 @@ The resulting imported form and code may have to be tweaked in **twinBASIC** to 
 
 <img src="https://github.com/GCuser99/VBA-UserForm-to-twinBASIC/blob/main/images/addin%20window.png" alt="AddinManagerDialog" width=50% height=50%>
 
-**Add-in Manager**: You can change the load behavoir of the Add-in by clicking  Add-insAdd-in Manager
+**Add-in Manager**: You can change the load behavoir of the Add-in by clicking  Add-ins->Add-in Manager
 
 <img src="https://github.com/GCuser99/VBA-UserForm-to-twinBASIC/blob/main/images/VBIDE%20Menu.png" alt="Menu" width=50% height=50%>
 

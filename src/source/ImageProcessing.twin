@@ -4,11 +4,9 @@ Module ImageProcessing
     #If VBA7 Then
     Private Declare PtrSafe Function CryptBinaryToString Lib "crypt32" Alias "CryptBinaryToStringW" (ByVal pbBinary As LongPtr, ByVal cbBinary As Long, ByVal dwFlags As Long, ByVal pszString As LongPtr, pcchString As Long) As Long
     Private Declare PtrSafe Function CryptStringToBinary Lib "crypt32" Alias "CryptStringToBinaryW" (ByVal pszString As LongPtr, ByVal cchString As Long, ByVal dwFlags As Long, ByVal pbBinary As LongPtr, pcbBinary As Long, Optional ByVal pdwSkip As Long, Optional ByVal pdwFlags As Long) As Long
-    Private Declare PtrSafe Function DispCallFunc Lib "oleAut32.dll" (ByVal pvInstance As LongPtr, ByVal offsetinVft As LongPtr, ByVal CallConv As Long, ByVal retTYP As Integer, ByVal paCNT As Long, ByRef paTypes As Integer, ByRef paValues As LongPtr, ByRef retVAR As Variant) As Long
     #Else
     Private Declare Function CryptBinaryToString Lib "crypt32" Alias "CryptBinaryToStringW" (ByVal pbBinary As Long, ByVal cbBinary As Long, ByVal dwFlags As Long, ByVal pszString As Long, pcchString As Long) As Long
     Private Declare Function CryptStringToBinary Lib "crypt32" Alias "CryptStringToBinaryW" (ByVal pszString As Long, ByVal cchString As Long, ByVal dwFlags As Long, ByVal pbBinary As Long, pcbBinary As Long, Optional ByVal pdwSkip As Long, Optional ByVal pdwFlags As Long) As Long
-    Private Declare Function DispCallFunc Lib "oleaut32" (ByVal pvInstance As Long, ByVal oVft As Long, ByVal lCc As Long, ByVal vtReturn As VbVarType, ByVal cActuals As Long, prgVt As Any, prgpVarg As Any, pvargResult As Variant) As Long
     #End If
 
     'https://learn.microsoft.com/en-us/windows/win32/api/wincrypt/nf-wincrypt-cryptbinarytostringa
@@ -26,168 +24,31 @@ Module ImageProcessing
     'the following two can be added to one of the flags above
     Const CRYPT_STRING_NOCRLF As Long = &H40000000& 'Do not append any new line characters to the encoded string.
     Const CRYPT_STRING_NOCR As Long = &H80000000& 'Only use the line feed (LF) character (0x0A) for a new line.
-    
-    Const wiaFormatBMP As String = "{B96B3CAB-0728-11D3-9D7B-0000F81EF32E}" 'FormatID for the Windows BMP format.
-    Const wiaFormatPNG As String = "{B96B3CAF-0728-11D3-9D7B-0000F81EF32E}" 'FormatID for the PNG format.
-    Const wiaFormatGIF As String = "{B96B3CB0-0728-11D3-9D7B-0000F81EF32E}" 'FormatID for the GIF format.
-    Const wiaFormatJPEG As String = "{B96B3CAE-0728-11D3-9D7B-0000F81EF32E}" 'FormatID for the JPEG format.
-    Const wiaFormatTIFF As String = "{B96B3CB1-0728-11D3-9D7B-0000F81EF32E}" 'FormatID for the TIFF format.
-    
-    Const PICTYPE_UNINITIALIZED As Long = -1
-    'The picture object is currently uninitialized. This value is only valid as a return value from IPicture::get_Type and is not valid with the PICTDESC structure.
-    Const PICTYPE_NONE As Long = PictureTypeConstants.vbPicTypeNone
-    'A new picture object is to be created without an initialized state. This value is valid only in the PICTDESC structure.
-    Const PICTYPE_BITMAP As Long = PictureTypeConstants.vbPicTypeBitmap
-    'The picture Type is a bitmap. When this value occurs in the PICTDESC structure, it means that the bmp field of that structure contains the relevant initialization parameters.
-    Const PICTYPE_METAFILE As Long = PictureTypeConstants.vbPicTypeMetafile
-    'The picture Type is a metafile. When this value occurs in the PICTDESC structure, it means that the wmf field of that structure contains the relevant initialization parameters.
-    Const PICTYPE_ICON As Long = PictureTypeConstants.vbPicTypeIcon
-    'The picture Type is an icon. When this value occurs in the PICTDESC structure, it means that the icon field of that structure contains the relevant initialization parameters.
-    Const PICTYPE_ENHMETAFILE As Long = PictureTypeConstants.vbPicTypeEMetafile
-    'The picture Type is an enhanced metafile. When this value occurs in the PICTDESC structure, it means that the emf field of that structure contains the relevant initialization parameters.
-        
+     
     Public Function GetImageString(pic As stdole.IPictureDisp) As String
         Dim bytes() As Byte
         If pic Is Nothing Then Exit Function
-        bytes = SaveAsImageAlt(pic, wiaFormatPNG)
-        GetImageString = ToBase64Array(bytes)
-    End Function
-    
-    Public Function GetMouseIconString(pic As stdole.IPictureDisp) As String
-        'through some reverse engineering...
-        Dim bytes() As Byte
-        If pic Is Nothing Then Exit Function
         bytes = BytesFromPicture(pic)
-        GetMouseIconString = Mid(ToBase64Array(bytes), 73)
+        'offset determined through some reverse engineering...
+        GetImageString = Mid(ToBase64Array(bytes), 73)
     End Function
 
-    Public Function ToBase64Array(baData() As Byte) As String
+    Public Function ToBase64Array(bytes() As Byte) As String
         'https://gist.github.com/wqweto/0002b7e6c4f92e69c8e8339ed2235b4c
         Dim lSize As Long
-        If UBound(baData) >= 0 Then
-            ToBase64Array = String$(2 * UBound(baData) + 6, 0)
+        If UBound(bytes) >= 0 Then
+            ToBase64Array = String$(2 * UBound(bytes) + 6, 0)
             lSize = Len(ToBase64Array) + 1
-            Call CryptBinaryToString(VarPtr(baData(0)), UBound(baData) + 1, CRYPT_STRING_BASE64 Or CRYPT_STRING_NOCRLF, StrPtr(ToBase64Array), lSize)
+            Call CryptBinaryToString(VarPtr(bytes(0)), UBound(bytes) + 1, CRYPT_STRING_BASE64 Or CRYPT_STRING_NOCRLF, StrPtr(ToBase64Array), lSize)
             ToBase64Array = Left$(ToBase64Array, lSize)
         End If
     End Function
 
-    Public Function FromBase64Array(sText As String) As Byte()
-        'https://gist.github.com/wqweto/0002b7e6c4f92e69c8e8339ed2235b4c
-        Dim lSize As Long
-        Dim baOutput() As Byte
-        lSize = Len(sText) + 1
-        ReDim baOutput(0 To lSize - 1) As Byte
-        If CryptStringToBinary(StrPtr(sText), Len(sText), 1, VarPtr(baOutput(0)), lSize) <> 0 Then
-            ReDim Preserve baOutput(0 To lSize - 1) As Byte
-            FromBase64Array = baOutput
-        End If
-    End Function
-    
-    'this one tested and works - compatible with both VBA and VB6/tB
-    Public Function SaveAsImage(pPic As stdole.IPicture, Optional ByVal outWIAType As String = wiaFormatPNG) As Byte()
-        'https://www.vbforums.com/showthread.php?889248-VB6-Convert-a-picture-to-PNG-byte-array-in-memory
-        Const adTypeBinary  As Long = 1
-        Const CC_STDCALL    As Long = 4
-        Dim oStream         As ADODB.Stream
-        Dim oImageFile      As WIA.ImageFile
-        Dim IID_IStream(3)  As Long
-        Dim pStream         As IUnknown
-        Dim vParams(0 To 1) As Variant
-        Dim vType(0 To 1)   As Integer
-        Dim vPtr(0 To 1)    As LongPtr
-        Dim wiaVector As WIA.Vector
-        Dim wiaImageProcess As WIA.ImageProcess
-    
-        '--- load pPic in WIA.ImageFile
-        Do While oImageFile Is Nothing
-            Set oStream = New ADODB.Stream
-            oStream.Type = adTypeBinary
-            oStream.Open
-            '--- call IUnknown::QI on oStream for IStream interface and store in pStream
-            IID_IStream(0) = &HC
-            IID_IStream(2) = &HC0
-            IID_IStream(3) = &H46000000
-            vParams(0) = VarPtr(IID_IStream(0))
-            vParams(1) = VarPtr(pStream)
-            vType(0) = VarType(vParams(0))
-            vType(1) = VarType(vParams(1))
-            vPtr(0) = VarPtr(vParams(0))
-            vPtr(1) = VarPtr(vParams(1))
-            Call DispCallFunc(ObjPtr(oStream), 0, CC_STDCALL, vbLong, UBound(vParams) + 1, vType(0), vPtr(0), Empty)
-            '--- NO magic anymore, only business as usual
-            pPic.SaveAsFile ByVal ObjPtr(pStream), True, 0
-            If oStream.Size = 0 Then
-                GoTo QH
-            End If
-            oStream.Position = 0
-            Set wiaVector = New WIA.Vector
-            With wiaVector 'CreateObject("WIA.Vector")
-                .BinaryData = oStream.Read
-                If pPic.Type <> vbPicTypeBitmap Then
-                    '--- this converts pPic to vbPicTypeBitmap subtype
-                    Set pPic = .Picture
-                Else
-                    Set oImageFile = .ImageFile
-                End If
-            End With
-            Set wiaVector = Nothing
-            Set oStream = Nothing
-        Loop
-        '--- serialize WIA.ImageFile to PNG file format
-        Set wiaImageProcess = New WIA.ImageProcess
-        With wiaImageProcess 'CreateObject("WIA.ImageProcess")
-            .Filters.Add .FilterInfos("Convert").FilterID
-            .Filters(.Filters.Count).Properties("FormatID").Value = outWIAType
-            SaveAsImage = .Apply(oImageFile).FileData.BinaryData
-        End With
-    QH:
-    End Function
-    
-    'this one tested and works - compatible with VB6/tB only (and requires some magic!)
-    Public Function SaveAsImageAlt(pic As StdPicture, Optional ByVal outWIAType As String = wiaFormatPNG) As Byte()
-        'https://www.vbforums.com/showthread.php?889248-VB6-Convert-a-picture-to-PNG-byte-array-in-memory
-        Dim PB As PropertyBag
-        Dim oImageFile As WIA.ImageFile
-        Dim wiaVector As WIA.Vector
-        Dim wiaImageProcess As WIA.ImageProcess
-        '--- load pPic in WIA.ImageFile
-        Do While oImageFile Is Nothing
-            Set PB = New PropertyBag
-            PB.WriteProperty "Pic", pic
-            Set wiaVector = New WIA.Vector
-            With wiaVector 'CreateObject("WIA.Vector")
-                .BinaryData = MidB(PB.Contents, 51) '<- "magic" ;-)
-                If pic.Type <> vbPicTypeBitmap Then
-                    Set pic = .Picture 'convert Pic to vbPicTypeBitmap
-                Else
-                    Set oImageFile = .ImageFile
-                End If
-            End With
-            Set wiaVector = Nothing
-        Loop
-        '--- serialize WIA.ImageFile to outWIAType file format
-        Set wiaImageProcess = New WIA.ImageProcess
-        With wiaImageProcess 'CreateObject("WIA.ImageProcess")
-            .Filters.Add .FilterInfos("Convert").FilterID
-            .Filters(.Filters.Count).Properties("FormatID").Value = outWIAType
-            SaveAsImageAlt = .Apply(oImageFile).FileData.BinaryData
-        End With
-    End Function
-    
-    Public Function BytesFromPicture(p As IPictureDisp) As Byte()
+    Public Function BytesFromPicture(pic As IPictureDisp) As Byte()
         Dim pb As PropertyBag
         Set pb = New PropertyBag
-        pb.WriteProperty "Image", p
+        pb.WriteProperty "Image", pic
         BytesFromPicture = pb.Contents
-    End Function
-    
-    Public Function PictureFromBytes(ByRef bPic() As Byte) As StdPicture
-        'https://www.vbforums.com/showthread.php?889248-VB6-Convert-a-picture-to-PNG-byte-array-in-memory
-        With New WIA.Vector
-            .BinaryData = bPic
-            Set PictureFromBytes = .Picture
-        End With
     End Function
     
     Public Function GetTransparentIconString() As String

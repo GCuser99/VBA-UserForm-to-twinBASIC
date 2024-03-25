@@ -82,18 +82,8 @@ Class myAddIn
     End Sub
 
     Private Sub RemoveVBEMenu()
-    	'also can clean up menu in vbide during debug by rmb click on menu
+    	'also can clean up menu manually in vbide during debugging by rmb click on menu
         'Customize->Menu Bar->Reset
-        /*
-        Dim ctl As Object
-        Do
-            Set ctl = vbe.CommandBars("Menu Bar").FindControl(Tag:="twinBASICTools")
-            If ctl IsNot Nothing Then
-                ctl.Delete
-            End If
-        Loop Until ctl Is Nothing
-        'below can replace above loop, after debugging phase is complete
-        */
         'vbe.CommandBars("Menu Bar").Reset 'this will clean up all 
         vbe.CommandBars("Menu Bar").Controls("twinBASIC Tools").Delete
     End Sub

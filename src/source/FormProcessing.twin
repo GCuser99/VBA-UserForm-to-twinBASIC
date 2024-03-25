@@ -1,5 +1,5 @@
 ' ==========================================================================
-' tBUserFormConverter v2.1
+' tBUserFormConverter v2.2
 '
 ' A VBIDE add-in (complied with twinBASIC) that converts VBA UserForms for use in twinBASIC.
 '
@@ -89,6 +89,7 @@ Module FormProcessing
         Dim comdlg As New VBComDlg.CommonDialog
         Dim res As Boolean
         Dim activeVBProjectFileName As String
+        Dim activeVBProjectFolderName As String
         
         comdlg.DialogTitle = "Select Output Folder:"
         
@@ -96,12 +97,16 @@ Module FormProcessing
         'in which case activeVBProject.FileName will fail
         On Error Resume Next
         activeVBProjectFileName = activeVBProject.FileName
-        If Err.Number > 0 Then activeVBProjectFileName = CurDir()
+        If Err.Number <> 0 Then
+            activeVBProjectFolderName = CurDir()
+        Else
+            activeVBProjectFolderName = fso.GetParentFolderName(activeVBProjectFileName)
+        End If
         On Error GoTo 0
         
         On Error GoTo EH
 
-        comdlg.InitDir = fso.GetParentFolderName(activeVBProjectFileName)
+        comdlg.InitDir = activeVBProjectFolderName
  
         res = comdlg.ShowFolderBrowser()
         If Not res Then
@@ -136,19 +141,17 @@ Module FormProcessing
             Set userForm = activeVBProject.VBComponents(dialogName)
             
             'generate GUID to be used for twinBASIC form designer and code module
-            'does this result in null-terminated string? If so need to strip...
             guid = VBA.CreateGUID()
-            If InStr(guid, vbNullChar) > 0 Then
-                guid = Left$(guid, InStr(guid, vbNullChar) - 1)
-            End If
             
             'sort controls in order of descendancy - must process parent controls first!
             Set sorted = SortControls(userForm.Designer, dialogName)
             
             'create the tB form dictionary from resources
             Set tBForm = JsonConverter.ParseJson(readControlJson("Form"))
+            
             'set properties of tB form that have matching UserForm counterparts
             processForm userForm, tBForm, ptsToPixels, useVBAFont, use3DAppearance, guid, hideIconBox
+            
             'enumerate and process each UserForm control
             For Each ctl In sorted
                 vbaControlTypeName = TypeName(ctl)
@@ -486,8 +489,8 @@ Module FormProcessing
         tbControl.Item("Tag") = ctl.Tag
         tbControl.Item("MousePointer") = getMousePointerString(ctl.MousePointer)
         
-        If ctl.MouseIcon IsNot Nothing Then
-            tbControl.Item("MouseIcon") = GetMouseIconString(ctl.MouseIcon)
+        If ctl.MouseIcon <> 0 Then
+            tbControl.Item("MouseIcon") = GetImageString(ctl.MouseIcon)
         End If
     
         If TypeName(ctl.Parent) = "Frame" Then
@@ -543,8 +546,8 @@ Module FormProcessing
         tbControl.Item("Tag") = ctl.Tag
         tbControl.Item("MousePointer") = getMousePointerString(ctl.MousePointer)
         
-        If ctl.MouseIcon IsNot Nothing Then
-            tbControl.Item("MouseIcon") = GetMouseIconString(ctl.MouseIcon)
+        If ctl.MouseIcon <> 0 Then
+            tbControl.Item("MouseIcon") = GetImageString(ctl.MouseIcon)
         End If
         	
         tbControl.Item("ToolTipText") = ctl.ControlTipText
@@ -588,8 +591,8 @@ Module FormProcessing
         tbControl.Item("Tag") = ctl.Tag
         tbControl.Item("MousePointer") = getMousePointerString(ctl.MousePointer)
         
-        If ctl.MouseIcon IsNot Nothing Then
-            tbControl.Item("MouseIcon") = GetMouseIconString(ctl.MouseIcon)
+        If ctl.MouseIcon <> 0 Then
+            tbControl.Item("MouseIcon") = GetImageString(ctl.MouseIcon)
         End If
 
         'tbControl.Item("HelpContextID") = ctl.HelpContextID
@@ -601,6 +604,7 @@ Module FormProcessing
         tbControl.Item("TabIndex") = ctl.TabIndex
         tbControl.Item("TabStop") = ctl.TabStop
         tbControl.Item("Text") = ctl.Text
+        
         Select Case ctl.TextAlign
         Case fmTextAlignCenter
             tbControl.Item("Alignment") = "vbCenter"
@@ -637,8 +641,8 @@ Module FormProcessing
         tbControl.Item("Tag") = ctl.Tag
         tbControl.Item("MousePointer") = getMousePointerString(ctl.MousePointer)
         
-        If ctl.MouseIcon IsNot Nothing Then
-            tbControl.Item("MouseIcon") = GetMouseIconString(ctl.MouseIcon)
+        If ctl.MouseIcon <> 0 Then
+            tbControl.Item("MouseIcon") = GetImageString(ctl.MouseIcon)
         End If
 
         'tbControl.Item("HelpContextID") = ctl.HelpContextID
@@ -676,8 +680,8 @@ Module FormProcessing
         tbControl.Item("Tag") = ctl.Tag
         tbControl.Item("MousePointer") = getMousePointerString(ctl.MousePointer)
         
-        If ctl.MouseIcon IsNot Nothing Then
-            tbControl.Item("MouseIcon") = GetMouseIconString(ctl.MouseIcon)
+        If ctl.MouseIcon <> 0 Then
+            tbControl.Item("MouseIcon") = GetImageString(ctl.MouseIcon)
         End If
   
         'tbControl.Item("HelpContextID") = ctl.HelpContextID
@@ -690,6 +694,7 @@ Module FormProcessing
         tbControl.Item("Value") = IIf(ctl.Value, "vbChecked", "vbUnchecked")
         tbControl.Item("TabIndex") = ctl.TabIndex
         tbControl.Item("TabStop") = ctl.TabStop
+        
         Select Case ctl.TextAlign
         Case fmTextAlignCenter
             'tbControl.Item("Alignment") = "tbCenter" 'tb CheckBox does not allow tbCenter
@@ -728,8 +733,8 @@ Module FormProcessing
         tbControl.Item("Tag") = ctl.Tag
         tbControl.Item("MousePointer") = getMousePointerString(ctl.MousePointer)
         
-        If ctl.MouseIcon IsNot Nothing Then
-            tbControl.Item("MouseIcon") = GetMouseIconString(ctl.MouseIcon)
+        If ctl.MouseIcon <> 0 Then
+            tbControl.Item("MouseIcon") = GetImageString(ctl.MouseIcon)
         End If
     
         'tbControl.Item("HelpContextID") = ctl.HelpContextID
@@ -779,8 +784,8 @@ Module FormProcessing
         tbControl.Item("Tag") = ctl.Tag
         tbControl.Item("MousePointer") = getMousePointerString(ctl.MousePointer)
         
-        If ctl.MouseIcon IsNot Nothing Then
-            tbControl.Item("MouseIcon") = GetMouseIconString(ctl.MouseIcon)
+        If ctl.MouseIcon <> 0 Then
+            tbControl.Item("MouseIcon") = GetImageString(ctl.MouseIcon)
         End If
 
         'tbControl.Item("HelpContextID") = ctl.HelpContextID
@@ -791,6 +796,7 @@ Module FormProcessing
         tbControl.Item("ForeColor") = ctl.ForeColor
         tbControl.Item("TabIndex") = ctl.TabIndex
         tbControl.Item("TabStop") = ctl.TabStop
+        
         Select Case ctl.MultiSelect
         Case fmMultiSelectSingle
             tbControl.Item("MultiSelect") = "vbMultiSelectNone"
@@ -799,6 +805,7 @@ Module FormProcessing
         Case fmMultiSelectExtended
             tbControl.Item("MultiSelect") = "vbMultiSelectExtended"
         End Select
+        
         Select Case ctl.ListStyle
         Case fmListStylePlain
             tbControl.Item("Style") = "vbListBoxStandard"
@@ -836,8 +843,8 @@ Module FormProcessing
         tbControl.Item("Tag") = ctl.Tag
         tbControl.Item("MousePointer") = getMousePointerString(ctl.MousePointer)
         
-        If ctl.MouseIcon IsNot Nothing Then
-            tbControl.Item("MouseIcon") = GetMouseIconString(ctl.MouseIcon)
+        If ctl.MouseIcon <> 0 Then
+            tbControl.Item("MouseIcon") = GetImageString(ctl.MouseIcon)
         End If
 
         'tbControl.Item("HelpContextID") = ctl.HelpContextID
@@ -850,6 +857,7 @@ Module FormProcessing
         tbControl.Item("TabIndex") = ctl.TabIndex
         tbControl.Item("Caption") = ctl.Caption
         tbControl.Item("Value") = ctl.Value
+        
         Select Case ctl.TextAlign
         Case fmTextAlignCenter
             tbControl.Item("Alignment") = "tbCenter"
@@ -858,8 +866,10 @@ Module FormProcessing
         Case fmTextAlignRight
             tbControl.Item("Alignment") = "tbRightJustify"
         End Select
+        
         tbControl.Item("VisualStyles") = useVisualStyles
         If use3DAppearance Then tbControl.Item("Appearance") = vbAppear3d Else tbControl.Item("Appearance") = vbAppearFlat
+        
         If ctl.Picture.type <> 0 Then
             tbControl.Item("Picture") = GetImageString(ctl.Picture)
             tbControl.Item("Style") = "vbButtonGraphical"
@@ -890,8 +900,8 @@ Module FormProcessing
         tbControl.Item("Tag") = ctl.Tag
         tbControl.Item("MousePointer") = getMousePointerString(ctl.MousePointer)
         
-        If ctl.MouseIcon IsNot Nothing Then
-            tbControl.Item("MouseIcon") = GetMouseIconString(ctl.MouseIcon)
+        If ctl.MouseIcon <> 0 Then
+            tbControl.Item("MouseIcon") = GetImageString(ctl.MouseIcon)
         End If
         
         tbControl.Item("ToolTipText") = ctl.ControlTipText
@@ -929,8 +939,8 @@ Module FormProcessing
         tbControl.Item("Tag") = ctl.Tag
         tbControl.Item("MousePointer") = getMousePointerString(ctl.MousePointer)
         
-        If ctl.MouseIcon IsNot Nothing Then
-            tbControl.Item("MouseIcon") = GetMouseIconString(ctl.MouseIcon)
+        If ctl.MouseIcon <> 0 Then
+            tbControl.Item("MouseIcon") = GetImageString(ctl.MouseIcon)
         End If
 
         'tbControl.Item("HelpContextID") = ctl.HelpContextID
@@ -979,8 +989,8 @@ Module FormProcessing
         tbControl.Item("Tag") = ctl.Tag
         tbControl.Item("MousePointer") = getMousePointerString(ctl.MousePointer)
         
-        If ctl.MouseIcon IsNot Nothing Then
-            tbControl.Item("MouseIcon") = GetMouseIconString(ctl.MouseIcon)
+        If ctl.MouseIcon <> 0 Then
+            tbControl.Item("MouseIcon") = GetImageString(ctl.MouseIcon)
         End If
 
         'tbControl.Item("HelpContextID") = ctl.HelpContextID
@@ -1066,8 +1076,8 @@ Module FormProcessing
     
         tbControl.Item("MousePointer") = getMousePointerString(frm.MousePointer)
         
-        If frm.MouseIcon IsNot Nothing Then
-            tbControl.Item("MouseIcon") = GetMouseIconString(frm.MouseIcon)
+        If frm.MouseIcon <> 0 Then
+            tbControl.Item("MouseIcon") = GetImageString(frm.MouseIcon)
         End If
     
         tbControl.Item("FormDesignerId") = "{" & guid & "}"

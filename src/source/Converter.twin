@@ -48,14 +48,14 @@ Class Converter
 	End Sub
 	
 	Private Sub New()
-	    cmdConvert.Enabled = False
-	    ckbOutputCode.Value = vbChecked
-	    cmdDeselectAll.Enabled = False
-        ckbUseVisualStyles.Value = vbUnchecked
-        ckb3DAppearance.Value = vbChecked
-        optUseVBAFonts.Value = True
-        ckbHideIconBox.Value = vbChecked
-        Set Me.Icon = GetImageFromResources("twinBASIC.ico", "IMAGES")
+		cmdConvert.Enabled = False
+		ckbOutputCode.Value = vbChecked
+		cmdDeselectAll.Enabled = False
+		ckbUseVisualStyles.Value = vbUnchecked
+		ckb3DAppearance.Value = vbChecked
+		optUseVBAFonts.Value = True
+		ckbHideIconBox.Value = vbChecked
+		Set Me.Icon = GetImageFromResources("twinBASIC.ico", "IMAGES")
 	End Sub
 	
 	Private Sub Form_QueryUnload(Cancel As Integer, UnloadMode As Integer)
