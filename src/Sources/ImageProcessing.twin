@@ -1,0 +1,61 @@
+Module ImageProcessing
+    Option Explicit
+
+    #If VBA7 Then
+    Private Declare PtrSafe Function CryptBinaryToString Lib "crypt32" Alias "CryptBinaryToStringW" (ByVal pbBinary As LongPtr, ByVal cbBinary As Long, ByVal dwFlags As Long, ByVal pszString As LongPtr, pcchString As Long) As Long
+    #Else
+    Private Declare Function CryptBinaryToString Lib "crypt32" Alias "CryptBinaryToStringW" (ByVal pbBinary As Long, ByVal cbBinary As Long, ByVal dwFlags As Long, ByVal pszString As Long, pcchString As Long) As Long
+    #End If
+
+    'https://learn.microsoft.com/en-us/windows/win32/api/wincrypt/nf-wincrypt-cryptbinarytostringa
+    Private Const CRYPT_STRING_BASE64 As Long = &H1 'Base64, without headers.
+    Private Const CRYPT_STRING_NOCRLF As Long = &H40000000& 'Do not append any new line characters to the encoded string.
+
+    Public Enum PictureTypeConstants
+        vbPicTypeNone = 0
+        vbPicTypeBitmap = 1
+        vbPicTypeMetafile = 2
+        vbPicTypeIcon = 3
+        vbPicTypeEMetafile = 4
+    End Enum
+    
+    Public Function GetImageString(pic As stdole.IPictureDisp) As String
+        Dim bytes() As Byte
+        If pic Is Nothing Then Exit Function
+        bytes = BytesFromPicture(pic)
+        GetImageString = ToBase64Array(bytes)
+    End Function
+    Public Function GetTransparentIconString() As String
+    	'used to hide the icon box on the form title bar
+        Dim bytes() As Byte
+        bytes = LoadResData("transparent.ico", "IMAGES")
+        GetTransparentIconString = ToBase64Array(bytes)
+    End Function
+    
+    Public Function GetImageFromResources(ByVal resourceId As Variant, ByVal resourceFolder As Variant) As StdPicture
+        Dim bytes() As Byte
+        bytes = LoadResData(resourceId, resourceFolder)
+        Return Global.LoadPicture(bytes)
+    End Function
+    
+    Private Function ToBase64Array(bytes() As Byte) As String
+        'https://gist.github.com/wqweto/0002b7e6c4f92e69c8e8339ed2235b4c
+        Dim lSize As Long
+        If UBound(bytes) >= 0 Then
+            ToBase64Array = String$(2 * UBound(bytes) + 6, 0)
+            lSize = Len(ToBase64Array) + 1
+            Call CryptBinaryToString(VarPtr(bytes(0)), UBound(bytes) + 1, CRYPT_STRING_BASE64 Or CRYPT_STRING_NOCRLF, StrPtr(ToBase64Array), lSize)
+            ToBase64Array = Left$(ToBase64Array, lSize)
+        End If
+    End Function
+
+    Private Function BytesFromPicture(pic As IPictureDisp) As Byte()
+        Dim pb As PropertyBag
+        Dim headerOffset As Long = 55
+        Set pb = New PropertyBag
+        pb.WriteProperty "Image", pic
+        'skip the stdPicture header on output
+        BytesFromPicture = MidB(pb.Contents, headerOffset)
+    End Function
+        
+End Module

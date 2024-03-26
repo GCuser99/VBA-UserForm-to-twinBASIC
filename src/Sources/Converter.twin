@@ -55,6 +55,7 @@ Class Converter
 		ckb3DAppearance.Value = vbChecked
 		optUseVBAFonts.Value = True
 		ckbHideIconBox.Value = vbChecked
+     	ckbSaveResources.Value = vbUnchecked
 		Set Me.Icon = GetImageFromResources("twinBASIC.ico", "IMAGES")
 	End Sub
 	

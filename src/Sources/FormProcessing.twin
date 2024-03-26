@@ -1,5 +1,5 @@
 ' ==========================================================================
-' tBUserFormConverter v2.3
+' tBUserFormConverter v2.4
 '
 ' A VBIDE add-in (complied with twinBASIC) that converts VBA UserForms for use in twinBASIC.
 '
@@ -34,7 +34,7 @@
 
 Module FormProcessing
 
-    Sub exportUserForm(activeVBProject As VBProject)
+    Public Sub ExportUserForm(activeVBProject As VBProject)
         Dim ctl As Object
         Dim json As String
         Dim fso As New FileSystemObject
@@ -64,6 +64,7 @@ Module FormProcessing
         Dim codelines As ArrayList
         Dim codeline As String
         Dim hideIconBox As Boolean
+        Dim saveImageResourcesToFile  As Boolean
     
         'Initialize the form
         For Each vbc In activeVBProject.VBComponents
@@ -124,6 +125,7 @@ Module FormProcessing
         useVisualStyles = (Converter.ckbUseVisualStyles.Value = vbChecked)
         use3DAppearance = (Converter.ckb3DAppearance.Value = vbChecked)
         hideIconBox = (Converter.ckbHideIconBox.Value = vbChecked)
+        saveImageResourcesToFile = (Converter.ckbSaveResources.Value = vbChecked)
         
         'unload the form
         Converter.Close
@@ -147,16 +149,16 @@ Module FormProcessing
             Set sorted = SortControls(userForm.Designer, dialogName)
             
             'create the tB form dictionary from resources
-            Set tBForm = JsonConverter.ParseJson(readControlJson("Form"))
+            Set tBForm = JsonConverter.ParseJson(ReadControlJson("Form"))
             
             'set properties of tB form that have matching UserForm counterparts
-            processForm userForm, tBForm, ptsToPixels, useVBAFont, use3DAppearance, guid, hideIconBox
+            ProcessForm userForm, tBForm, ptsToPixels, useVBAFont, use3DAppearance, guid, hideIconBox
             
             'enumerate and process each UserForm control
             For Each ctl In sorted
                 vbaControlTypeName = TypeName(ctl)
                 'assign the matching tB control to the input UserForm control
-                If isSupported(ctl) Then
+                If IsSupported(ctl) Then
                     Select Case vbaControlTypeName
                     Case "ScrollBar"
                         tBControlTypeName = tbScrollBarTypeName(ctl)
@@ -178,40 +180,49 @@ Module FormProcessing
                 End If
                 
                 'create the tB control dictionary from a json string read from Resources
-                Set tbControl = JsonConverter.ParseJson(readControlJson(tBControlTypeName))
+                Set tbControl = JsonConverter.ParseJson(ReadControlJson(tBControlTypeName))
                 
                 'set properties of tB control that have matching UserForm control counterparts
                 Select Case vbaControlTypeName
                 Case "Label"
-                    processLabel ctl, tbControl, ptsToPixels, useVBAFont, use3DAppearance
+                    ProcessLabel ctl, tbControl, ptsToPixels, useVBAFont, use3DAppearance
                 Case "CommandButton"
-                    processCommandButton ctl, tbControl, ptsToPixels, useVBAFont, useVisualStyles, use3DAppearance
+                    ProcessCommandButton ctl, tbControl, ptsToPixels, useVBAFont, useVisualStyles, use3DAppearance
                 Case "TextBox"
-                    processTextBox ctl, tbControl, ptsToPixels, useVBAFont, useVisualStyles, use3DAppearance
+                    ProcessTextBox ctl, tbControl, ptsToPixels, useVBAFont, useVisualStyles, use3DAppearance
                 Case "Frame"
-                    processFrame ctl, tbControl, ptsToPixels, useVBAFont, useVisualStyles, use3DAppearance
+                    ProcessFrame ctl, tbControl, ptsToPixels, useVBAFont, useVisualStyles, use3DAppearance
                 Case "CheckBox"
-                    processCheckBox ctl, tbControl, ptsToPixels, useVBAFont, useVisualStyles, use3DAppearance
+                    ProcessCheckBox ctl, tbControl, ptsToPixels, useVBAFont, useVisualStyles, use3DAppearance
                 Case "ComboBox"
-                    processComboBox ctl, tbControl, ptsToPixels, useVBAFont, useVisualStyles, use3DAppearance
+                    ProcessComboBox ctl, tbControl, ptsToPixels, useVBAFont, useVisualStyles, use3DAppearance
                 Case "ListBox"
-                    processListBox ctl, tbControl, ptsToPixels, useVBAFont, useVisualStyles, use3DAppearance
+                    ProcessListBox ctl, tbControl, ptsToPixels, useVBAFont, useVisualStyles, use3DAppearance
                 Case "OptionButton"
-                    processOptionButton ctl, tbControl, ptsToPixels, useVBAFont, useVisualStyles, use3DAppearance
+                    ProcessOptionButton ctl, tbControl, ptsToPixels, useVBAFont, useVisualStyles, use3DAppearance
                 Case "ScrollBar"
-                    processScrollBar ctl, tbControl, ptsToPixels
+                    ProcessScrollBar ctl, tbControl, ptsToPixels
                 Case "Image"
-                    processImage ctl, tbControl, ptsToPixels, use3DAppearance
+                    ProcessImage ctl, tbControl, ptsToPixels, use3DAppearance
                 Case "SpinButton"
-                    processSpinButton ctl, tbControl, ptsToPixels, useVisualStyles
+                    ProcessSpinButton ctl, tbControl, ptsToPixels, useVisualStyles
                 Case "ToggleButton"
-                    processToggleButton ctl, tbControl, ptsToPixels, useVBAFont, useVisualStyles, use3DAppearance
+                    ProcessToggleButton ctl, tbControl, ptsToPixels, useVBAFont, useVisualStyles, use3DAppearance
                 Case Else 'Unsupported
-                    processUnsupported ctl, tbControl, ptsToPixels
+                    ProcessUnsupported ctl, tbControl, ptsToPixels
                 End Select
                 'add tB control dictionary to tB form dictionary
                 AddToParent tBForm, ctl, tbControl
             Next ctl
+            
+            If saveImageResourcesToFile Then
+                SaveFormImagesToFile userForm, folderPath
+                For Each ctl In sorted
+                    If IsSupported(ctl) Then
+                        SaveControlImagesToFile ctl, folderPath, dialogName
+                    End If
+                Next ctl
+            End If
             
             'prepare for output to file
             Set rootDoc = New Collection
@@ -338,10 +349,10 @@ Module FormProcessing
 
     'recursive routine to search the dictionary for the parent key of ctl, 
     'and then if found, add ctl's tB dictionary to parent
-    Function AddToParent(parent As Dictionary, ctl As Object, tbControl As Dictionary) As Boolean
+    Private Function AddToParent(parent As Dictionary, ctl As Object, tbControl As Dictionary) As Boolean
         Dim child As Dictionary
         If parent.Exists("_children") Then
-            If parent("Name") = getParentName(ctl) Then
+            If parent("Name") = GetParentName(ctl) Then
                 parent.Item("_children").Add tbControl
                 Exit Function
             Else
@@ -353,7 +364,7 @@ Module FormProcessing
     End Function
 
     'sort controls in order of descendancy - must process parent controls before their descendants!
-    Function SortControls(frm As Object, ByVal dialogName As String) As Collection
+    Private Function SortControls(frm As Object, ByVal dialogName As String) As Collection
         Dim sorted As New Collection
         Dim unsorted As New Collection
         Dim ctl As Object
@@ -378,7 +389,7 @@ Module FormProcessing
             k = k + 1
             For i = unsorted.Count To 1 Step -1
                 For j = 1 To sorted.Count
-                    If getParentName(unsorted(i)) = sorted(j).Name Then
+                    If GetParentName(unsorted(i)) = sorted(j).Name Then
                         sorted.Add unsorted(i)
                         unsorted.Remove i
                         Exit For
@@ -391,7 +402,7 @@ Module FormProcessing
         Set SortControls = sorted
     End Function
 
-    Sub SetFontProperties(tbControl As Dictionary, ctl As Object)
+    Private Sub SetFontProperties(tbControl As Dictionary, ctl As Object)
         tbControl.Item("FontName") = ctl.Font.Name
         tbControl.Item("FontSize") = ctl.Font.Size
         tbControl.Item("FontBold") = ctl.Font.Bold
@@ -400,60 +411,60 @@ Module FormProcessing
         tbControl.Item("FontUnderline") = ctl.Font.Underline
     End Sub
 
-    Function getMousePointerString(ByVal vbacode As Long) As String
+    Private Function GetMousePointerString(ByVal vbacode As Long) As String
         Select Case vbacode
         Case fmMousePointerDefault   '0   Standard pointer. The image is determined by the object (default).
-            getMousePointerString = "vbDefault"
+            GetMousePointerString = "vbDefault"
         Case fmMousePointerArrow '1   Arrow.
-            getMousePointerString = "vbArrow"
+            GetMousePointerString = "vbArrow"
         Case fmMousePointerCross '2   Cross-hair pointer.
-            getMousePointerString = "vbCrosshair"
+            GetMousePointerString = "vbCrosshair"
         Case fmMousePointerIBeam '3   I-beam.
-            getMousePointerString = "vbIbeam"
+            GetMousePointerString = "vbIbeam"
         Case fmMousePointerSizeNESW  '6   Double arrow pointing northeast and southwest.
-            getMousePointerString = "vbSizeNESW"
+            GetMousePointerString = "vbSizeNESW"
         Case fmMousePointerSizeNS    '7   Double arrow pointing north and south.
-            getMousePointerString = "vbSizeNS"
+            GetMousePointerString = "vbSizeNS"
         Case fmMousePointerSizeNWSE  '8   Double arrow pointing northwest and southeast.
-            getMousePointerString = "vbSizeNWSE"
+            GetMousePointerString = "vbSizeNWSE"
         Case fmMousePointerSizeWE    '9   Double arrow pointing west and east.
-            getMousePointerString = "vbSizeWE"
+            GetMousePointerString = "vbSizeWE"
         Case fmMousePointerUpArrow   '10  Up arrow.
-            getMousePointerString = "vbUpArrow"
+            GetMousePointerString = "vbUpArrow"
         Case fmMousePointerHourGlass '11  Hourglass.
-            getMousePointerString = "vbHourglass"
+            GetMousePointerString = "vbHourglass"
         Case fmMousePointerNoDrop    '12  "Not" symbol (circle with a diagonal line) on top of the object being dragged. Indicates an invalid drop target.
-            getMousePointerString = "vbNoDrop"
+            GetMousePointerString = "vbNoDrop"
         Case fmMousePointerAppStarting   '13  Arrow with an hourglass.
-            getMousePointerString = "vbArrowHourglass"
+            GetMousePointerString = "vbArrowHourglass"
         Case fmMousePointerHelp  '14  Arrow with a question mark.
-            getMousePointerString = "vbArrowQuestion"
+            GetMousePointerString = "vbArrowQuestion"
         Case fmMousePointerSizeAll   '15  Size all cursor (arrows pointing north, south, east, and west).
-            getMousePointerString = "vbSizeAll"
+            GetMousePointerString = "vbSizeAll"
         Case fmMousePointerCustom    '99  Uses the icon specified by the MouseIcon property.
-            getMousePointerString = "vbCustom"
+            GetMousePointerString = "vbCustom"
         End Select
     End Function
 
-    Private Function getParentName(ctl As Object) As String
+    Private Function GetParentName(ctl As Object) As String
         Select Case TypeName(ctl.parent)
         Case "Page"
             'Page control is an "internal" child of MultiPage control. So if a ctl
             'is contained by Page, must skip to grand-parent to find public "parent"
-            getParentName = ctl.parent.parent.Name
+            GetParentName = ctl.parent.parent.Name
         Case Else
-            getParentName = ctl.parent.Name
+            GetParentName = ctl.parent.Name
         End Select
     End Function
 
-    Private Function isSupported(ctl As Object) As Boolean
+    Private Function IsSupported(ctl As Object) As Boolean
         Select Case TypeName(ctl)
         Case "Label", "CommandButton", "TextBox", "Frame", "CheckBox", "ComboBox", "ListBox", "OptionButton", "Image", "ScrollBar", "SpinButton", "ToggleButton"
-            isSupported = True
+            IsSupported = True
         Case "TabStrip", "MultiPage"
-            isSupported = False
+            IsSupported = False
         Case Else
-            isSupported = False
+            IsSupported = False
         End Select
     End Function
 
@@ -468,7 +479,7 @@ Module FormProcessing
         End Select
     End Function
 
-    Private Sub processLabel(ctl As Object, tbControl As Dictionary, ByVal ptsToPixels As Double, ByVal useVBAFont As Boolean, ByVal use3DAppearance As Boolean)
+    Private Sub ProcessLabel(ctl As Object, tbControl As Dictionary, ByVal ptsToPixels As Double, ByVal useVBAFont As Boolean, ByVal use3DAppearance As Boolean)
         tbControl.Item("Name") = ctl.Name
         tbControl.Item("Height") = ctl.Height * ptsToPixels
         tbControl.Item("Width") = ctl.Width * ptsToPixels
@@ -487,7 +498,7 @@ Module FormProcessing
         tbControl.Item("Enabled") = ctl.Enabled
         tbControl.Item("Visible") = ctl.Visible
         tbControl.Item("Tag") = ctl.Tag
-        tbControl.Item("MousePointer") = getMousePointerString(ctl.MousePointer)
+        tbControl.Item("MousePointer") = GetMousePointerString(ctl.MousePointer)
         
         If ctl.MouseIcon <> 0 Then
             tbControl.Item("MouseIcon") = GetImageString(ctl.MouseIcon)
@@ -525,7 +536,7 @@ Module FormProcessing
         If use3DAppearance Then tbControl.Item("Appearance") = vbAppear3d Else tbControl.Item("Appearance") = vbAppearFlat
     End Sub
 
-    Private Sub processCommandButton(ctl As Object, tbControl As Dictionary, ByVal ptsToPixels As Double, ByVal useVBAFont As Boolean, ByVal useVisualStyles As Boolean, ByVal use3DAppearance As Boolean)
+    Private Sub ProcessCommandButton(ctl As Object, tbControl As Dictionary, ByVal ptsToPixels As Double, ByVal useVBAFont As Boolean, ByVal useVisualStyles As Boolean, ByVal use3DAppearance As Boolean)
         tbControl.Item("Name") = ctl.Name
         tbControl.Item("Height") = ctl.Height * ptsToPixels
         tbControl.Item("Width") = ctl.Width * ptsToPixels
@@ -544,7 +555,7 @@ Module FormProcessing
         tbControl.Item("Enabled") = ctl.Enabled
         tbControl.Item("Visible") = ctl.Visible
         tbControl.Item("Tag") = ctl.Tag
-        tbControl.Item("MousePointer") = getMousePointerString(ctl.MousePointer)
+        tbControl.Item("MousePointer") = GetMousePointerString(ctl.MousePointer)
         
         If ctl.MouseIcon <> 0 Then
             tbControl.Item("MouseIcon") = GetImageString(ctl.MouseIcon)
@@ -570,7 +581,7 @@ Module FormProcessing
         End If
     End Sub
 
-    Private Sub processTextBox(ctl As Object, tbControl As Dictionary, ByVal ptsToPixels As Double, ByVal useVBAFont As Boolean, ByVal useVisualStyles As Boolean, ByVal use3DAppearance As Boolean)
+    Private Sub ProcessTextBox(ctl As Object, tbControl As Dictionary, ByVal ptsToPixels As Double, ByVal useVBAFont As Boolean, ByVal useVisualStyles As Boolean, ByVal use3DAppearance As Boolean)
         tbControl.Item("Name") = ctl.Name
         tbControl.Item("Height") = ctl.Height * ptsToPixels
         tbControl.Item("Width") = ctl.Width * ptsToPixels
@@ -589,7 +600,7 @@ Module FormProcessing
         tbControl.Item("Enabled") = ctl.Enabled
         tbControl.Item("Visible") = ctl.Visible
         tbControl.Item("Tag") = ctl.Tag
-        tbControl.Item("MousePointer") = getMousePointerString(ctl.MousePointer)
+        tbControl.Item("MousePointer") = GetMousePointerString(ctl.MousePointer)
         
         If ctl.MouseIcon <> 0 Then
             tbControl.Item("MouseIcon") = GetImageString(ctl.MouseIcon)
@@ -620,7 +631,7 @@ Module FormProcessing
         If use3DAppearance Then tbControl.Item("Appearance") = vbAppear3d Else tbControl.Item("Appearance") = vbAppearFlat
     End Sub
 
-    Private Sub processFrame(ctl As Object, tbControl As Dictionary, ByVal ptsToPixels As Double, ByVal useVBAFont As Boolean, ByVal useVisualStyles As Boolean, ByVal use3DAppearance As Boolean)
+    Private Sub ProcessFrame(ctl As Object, tbControl As Dictionary, ByVal ptsToPixels As Double, ByVal useVBAFont As Boolean, ByVal useVisualStyles As Boolean, ByVal use3DAppearance As Boolean)
         tbControl.Item("Name") = ctl.Name
         tbControl.Item("Height") = ctl.Height * ptsToPixels
         tbControl.Item("Width") = ctl.Width * ptsToPixels
@@ -639,7 +650,7 @@ Module FormProcessing
         tbControl.Item("Enabled") = ctl.Enabled
         tbControl.Item("Visible") = ctl.Visible
         tbControl.Item("Tag") = ctl.Tag
-        tbControl.Item("MousePointer") = getMousePointerString(ctl.MousePointer)
+        tbControl.Item("MousePointer") = GetMousePointerString(ctl.MousePointer)
         
         If ctl.MouseIcon <> 0 Then
             tbControl.Item("MouseIcon") = GetImageString(ctl.MouseIcon)
@@ -658,7 +669,7 @@ Module FormProcessing
         If use3DAppearance Then tbControl.Item("Appearance") = vbAppear3d Else tbControl.Item("Appearance") = vbAppearFlat
     End Sub
 
-    Private Sub processCheckBox(ctl As Object, tbControl As Dictionary, ByVal ptsToPixels As Double, ByVal useVBAFont As Boolean, ByVal useVisualStyles As Boolean, ByVal use3DAppearance As Boolean)
+    Private Sub ProcessCheckBox(ctl As Object, tbControl As Dictionary, ByVal ptsToPixels As Double, ByVal useVBAFont As Boolean, ByVal useVisualStyles As Boolean, ByVal use3DAppearance As Boolean)
         tbControl.Item("Name") = ctl.Name
         tbControl.Item("Height") = ctl.Height * ptsToPixels
         tbControl.Item("Width") = ctl.Width * ptsToPixels
@@ -678,7 +689,7 @@ Module FormProcessing
         tbControl.Item("Enabled") = ctl.Enabled
         tbControl.Item("Visible") = ctl.Visible
         tbControl.Item("Tag") = ctl.Tag
-        tbControl.Item("MousePointer") = getMousePointerString(ctl.MousePointer)
+        tbControl.Item("MousePointer") = GetMousePointerString(ctl.MousePointer)
         
         If ctl.MouseIcon <> 0 Then
             tbControl.Item("MouseIcon") = GetImageString(ctl.MouseIcon)
@@ -711,7 +722,7 @@ Module FormProcessing
         End If
     End Sub
 
-    Private Sub processComboBox(ctl As Object, tbControl As Dictionary, ByVal ptsToPixels As Double, ByVal useVBAFont As Boolean, ByVal useVisualStyles As Boolean, ByVal use3DAppearance As Boolean)
+    Private Sub ProcessComboBox(ctl As Object, tbControl As Dictionary, ByVal ptsToPixels As Double, ByVal useVBAFont As Boolean, ByVal useVisualStyles As Boolean, ByVal use3DAppearance As Boolean)
         tbControl.Item("Name") = ctl.Name
         tbControl.Item("Height") = ctl.Height * ptsToPixels
         tbControl.Item("Width") = ctl.Width * ptsToPixels
@@ -731,7 +742,7 @@ Module FormProcessing
         tbControl.Item("Enabled") = ctl.Enabled
         tbControl.Item("Visible") = ctl.Visible
         tbControl.Item("Tag") = ctl.Tag
-        tbControl.Item("MousePointer") = getMousePointerString(ctl.MousePointer)
+        tbControl.Item("MousePointer") = GetMousePointerString(ctl.MousePointer)
         
         If ctl.MouseIcon <> 0 Then
             tbControl.Item("MouseIcon") = GetImageString(ctl.MouseIcon)
@@ -762,7 +773,7 @@ Module FormProcessing
         If use3DAppearance Then tbControl.Item("Appearance") = vbAppear3d Else tbControl.Item("Appearance") = vbAppearFlat
     End Sub
 
-    Private Sub processListBox(ctl As Object, tbControl As Dictionary, ByVal ptsToPixels As Double, ByVal useVBAFont As Boolean, ByVal useVisualStyles As Boolean, ByVal use3DAppearance As Boolean)
+    Private Sub ProcessListBox(ctl As Object, tbControl As Dictionary, ByVal ptsToPixels As Double, ByVal useVBAFont As Boolean, ByVal useVisualStyles As Boolean, ByVal use3DAppearance As Boolean)
         tbControl.Item("Name") = ctl.Name
         tbControl.Item("Height") = ctl.Height * ptsToPixels
         tbControl.Item("Width") = ctl.Width * ptsToPixels
@@ -782,7 +793,7 @@ Module FormProcessing
         tbControl.Item("Enabled") = ctl.Enabled
         tbControl.Item("Visible") = ctl.Visible
         tbControl.Item("Tag") = ctl.Tag
-        tbControl.Item("MousePointer") = getMousePointerString(ctl.MousePointer)
+        tbControl.Item("MousePointer") = GetMousePointerString(ctl.MousePointer)
         
         If ctl.MouseIcon <> 0 Then
             tbControl.Item("MouseIcon") = GetImageString(ctl.MouseIcon)
@@ -821,7 +832,7 @@ Module FormProcessing
         If use3DAppearance Then tbControl.Item("Appearance") = vbAppear3d Else tbControl.Item("Appearance") = vbAppearFlat
     End Sub
 
-    Private Sub processOptionButton(ctl As Object, tbControl As Dictionary, ByVal ptsToPixels As Double, ByVal useVBAFont As Boolean, ByVal useVisualStyles As Boolean, ByVal use3DAppearance As Boolean)
+    Private Sub ProcessOptionButton(ctl As Object, tbControl As Dictionary, ByVal ptsToPixels As Double, ByVal useVBAFont As Boolean, ByVal useVisualStyles As Boolean, ByVal use3DAppearance As Boolean)
         tbControl.Item("Name") = ctl.Name
         tbControl.Item("Height") = ctl.Height * ptsToPixels
         tbControl.Item("Width") = ctl.Width * ptsToPixels
@@ -841,7 +852,7 @@ Module FormProcessing
         tbControl.Item("Enabled") = ctl.Enabled
         tbControl.Item("Visible") = ctl.Visible
         tbControl.Item("Tag") = ctl.Tag
-        tbControl.Item("MousePointer") = getMousePointerString(ctl.MousePointer)
+        tbControl.Item("MousePointer") = GetMousePointerString(ctl.MousePointer)
         
         If ctl.MouseIcon <> 0 Then
             tbControl.Item("MouseIcon") = GetImageString(ctl.MouseIcon)
@@ -876,7 +887,7 @@ Module FormProcessing
         End If
     End Sub
 
-    Private Sub processImage(ctl As Object, tbControl As Dictionary, ByVal ptsToPixels As Double, ByVal use3DAppearance As Boolean)
+    Private Sub ProcessImage(ctl As Object, tbControl As Dictionary, ByVal ptsToPixels As Double, ByVal use3DAppearance As Boolean)
         tbControl.Item("Name") = ctl.Name
         tbControl.Item("Height") = ctl.Height * ptsToPixels
         tbControl.Item("Width") = ctl.Width * ptsToPixels
@@ -898,7 +909,7 @@ Module FormProcessing
         tbControl.Item("Enabled") = ctl.Enabled
         tbControl.Item("Visible") = ctl.Visible
         tbControl.Item("Tag") = ctl.Tag
-        tbControl.Item("MousePointer") = getMousePointerString(ctl.MousePointer)
+        tbControl.Item("MousePointer") = GetMousePointerString(ctl.MousePointer)
         
         If ctl.MouseIcon <> 0 Then
             tbControl.Item("MouseIcon") = GetImageString(ctl.MouseIcon)
@@ -917,7 +928,7 @@ Module FormProcessing
         End If
     End Sub
 
-    Private Sub processSpinButton(ctl As Object, tbControl As Dictionary, ByVal ptsToPixels As Double, ByVal useVisualStyles As Boolean)
+    Private Sub ProcessSpinButton(ctl As Object, tbControl As Dictionary, ByVal ptsToPixels As Double, ByVal useVisualStyles As Boolean)
         tbControl.Item("Name") = ctl.Name
         tbControl.Item("Height") = ctl.Height * ptsToPixels
         tbControl.Item("Width") = ctl.Width * ptsToPixels
@@ -937,7 +948,7 @@ Module FormProcessing
         tbControl.Item("Enabled") = ctl.Enabled
         tbControl.Item("Visible") = ctl.Visible
         tbControl.Item("Tag") = ctl.Tag
-        tbControl.Item("MousePointer") = getMousePointerString(ctl.MousePointer)
+        tbControl.Item("MousePointer") = GetMousePointerString(ctl.MousePointer)
         
         If ctl.MouseIcon <> 0 Then
             tbControl.Item("MouseIcon") = GetImageString(ctl.MouseIcon)
@@ -967,7 +978,7 @@ Module FormProcessing
         tbControl.Item("VisualStyles") = useVisualStyles
     End Sub
 
-    Private Sub processScrollBar(ctl As Object, tbControl As Dictionary, ByVal ptsToPixels As Double)
+    Private Sub ProcessScrollBar(ctl As Object, tbControl As Dictionary, ByVal ptsToPixels As Double)
         tbControl.Item("Name") = ctl.Name
         tbControl.Item("Height") = ctl.Height * ptsToPixels
         tbControl.Item("Width") = ctl.Width * ptsToPixels
@@ -987,7 +998,7 @@ Module FormProcessing
         tbControl.Item("Enabled") = ctl.Enabled
         tbControl.Item("Visible") = ctl.Visible
         tbControl.Item("Tag") = ctl.Tag
-        tbControl.Item("MousePointer") = getMousePointerString(ctl.MousePointer)
+        tbControl.Item("MousePointer") = GetMousePointerString(ctl.MousePointer)
         
         If ctl.MouseIcon <> 0 Then
             tbControl.Item("MouseIcon") = GetImageString(ctl.MouseIcon)
@@ -1009,12 +1020,12 @@ Module FormProcessing
         tbControl.Item("Tag") = ctl.Tag
     End Sub
     
-    Private Sub processToggleButton(ctl As Object, tbControl As Dictionary, ByVal ptsToPixels As Double, ByVal useVBAFont As Boolean, ByVal useVisualStyles As Boolean, ByVal use3DAppearance As Boolean)
-        processCheckBox ctl, tbControl, ptsToPixels, useVBAFont, useVisualStyles, use3DAppearance
+    Private Sub ProcessToggleButton(ctl As Object, tbControl As Dictionary, ByVal ptsToPixels As Double, ByVal useVBAFont As Boolean, ByVal useVisualStyles As Boolean, ByVal use3DAppearance As Boolean)
+        ProcessCheckBox ctl, tbControl, ptsToPixels, useVBAFont, useVisualStyles, use3DAppearance
         tbControl.Item("Style") = "vbButtonGraphical" 'this is what makes a CheckBox into a ToggleButton
     End Sub
 
-    Private Sub processUnsupported(ctl As Object, tbControl As Dictionary, ByVal ptsToPixels As Double)
+    Private Sub ProcessUnsupported(ctl As Object, tbControl As Dictionary, ByVal ptsToPixels As Double)
         tbControl.Item("Name") = ctl.Name
         tbControl.Item("Height") = ctl.Height * ptsToPixels
         tbControl.Item("Width") = ctl.Width * ptsToPixels
@@ -1045,7 +1056,7 @@ Module FormProcessing
         If tbControl.Exists("WordWrap") Then tbControl.Item("WordWrap") = True
     End Sub
 
-    Private Sub processForm(userForm As VBComponent, tbControl As Dictionary, ByVal ptsToPixels As Double, ByVal useVBAFont As Boolean, ByVal Use3DAppearance As Boolean, ByVal guid As String, ByVal hideIconBox As Boolean)
+    Private Sub ProcessForm(userForm As VBComponent, tbControl As Dictionary, ByVal ptsToPixels As Double, ByVal useVBAFont As Boolean, ByVal Use3DAppearance As Boolean, ByVal guid As String, ByVal hideIconBox As Boolean)
         Dim frm As Object
         Set frm = userForm.Designer
         tbControl.Item("Height") = (frm.InsideHeight) * ptsToPixels
@@ -1074,7 +1085,7 @@ Module FormProcessing
         tbControl.Item("ScaleHeight") = frm.InsideHeight * 20
         tbControl.Item("ScaleWidth") = frm.InsideWidth * 20
     
-        tbControl.Item("MousePointer") = getMousePointerString(frm.MousePointer)
+        tbControl.Item("MousePointer") = GetMousePointerString(frm.MousePointer)
         
         If frm.MouseIcon <> 0 Then
             tbControl.Item("MouseIcon") = GetImageString(frm.MouseIcon)
@@ -1091,8 +1102,71 @@ Module FormProcessing
         If hideIconBox Then tbControl.Item("Icon") = GetTransparentIconString()
     End Sub
     
-    Public Function readControlJson(ByVal controlType As String) As String
-        readControlJson = StrConv(LoadResDataInternal(controlType, "CONTROLS"), VbStrConv.vbFromUTF8)
+    Private Function ReadControlJson(ByVal controlType As String) As String
+        ReadControlJson = StrConv(LoadResDataInternal(controlType, "CONTROLS"), VbStrConv.vbFromUTF8)
     End Function
+    
+    Private Sub SaveControlImagesToFile(ctl As Object, ByVal folderPath As String, ByVal dialogName As String)
+        Dim fileExt As String
+        Dim ctlTypeName As String
+        Dim ctlPicType As Long
+        
+        ctlTypeName = TypeName(ctl)
+        Select Case ctlTypeName
+        Case "CheckBox", "CommandButton", "OptionButton", "ToggleButton", "Image"
+            If ctlTypeName = "Image" AndAlso ctl.Picture Is Nothing Then
+                ctlPicType = vbPicTypeNone
+            Else
+                ctlPicType = ctl.Picture.Type
+            End If
+            If ctlPicType <> vbPicTypeNone Then
+                'has Picture and MouseIcon
+                Select Case ctlPicType
+                Case vbPicTypeBitmap
+                    fileExt = ".bmp"
+                Case vbPicTypeIcon
+                    fileExt = ".ico"
+                Case vbPicTypeMetafile
+                    fileExt = ".wmf"
+                Case vbPicTypeEMetafile
+                    fileExt = ".emf"
+                End Select
+                SavePicture ctl.Picture, folderPath & "\" & dialogName & "_" & ctl.name & "_Picture" & fileExt
+            End If
+        Case "ComboBox", "Frame", "ScrollBar", "Label", "ListBox", "TextBox", "SpinButton"
+            'has no picture - only MouseIcon
+            '*frame has Picture property in Userform but not in tB form
+        End Select
+
+        If ctl.MouseIcon <> vbPicTypeNone Then
+            SavePicture ctl.MouseIcon, folderPath & "\" & dialogName & "_" & ctl.name & "_MouseIcon" & ".ico"
+        End If
+    End Sub
+    
+    Private Sub SaveFormImagesToFile(userForm As VBComponent, ByVal folderPath As String)
+        Dim frm As Object
+        Dim dialogName As String
+        Dim fileExt As String
+        Set frm = userForm.Designer
+        dialogName = userForm.Name
+        
+        If frm.Picture IsNot Nothing Then
+            Select Case frm.Picture.Type
+            Case vbPicTypeBitmap
+                fileExt = ".bmp"
+            Case vbPicTypeIcon
+                fileExt = ".ico"
+            Case vbPicTypeMetafile
+                fileExt = ".wmf"
+            Case vbPicTypeEMetafile
+                fileExt = ".emf"
+            End Select
+            SavePicture frm.Picture, folderPath & "\" & dialogName & "_" & "Form_Picture" & fileExt
+        End If
+                 
+        If frm.MouseIcon <> vbPicTypeNone Then
+            SavePicture frm.MouseIcon, folderPath & "\" & dialogName & "_" & "Form_MouseIcon" & ".ico"
+        End If
+    End Sub
 
 End Module

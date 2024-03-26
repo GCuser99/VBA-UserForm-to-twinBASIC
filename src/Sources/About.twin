@@ -5,7 +5,7 @@ Class About
 
 	Sub New()
     	lblInfo.Caption = "Author: GCUser99" & vbCrLf & _  
-        "Version: v2.3" & vbCrLf & _  
+        "Version: v2.4" & vbCrLf & _  
         "Description: A VBIDE add-in (complied with twinBASIC) that converts VBA UserForms for use in twinBASIC."
         lblWebsite.Caption = "https://github.com/GCuser99/VBA-UserForm-to-twinBASIC"
         Set Me.Icon = GetImageFromResources("transparent.ico", "IMAGES")

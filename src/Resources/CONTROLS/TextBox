@@ -54,7 +54,7 @@
     "Tag": null,
     "Text": "TextBox",
     "TextHint": null,
-                                              "TextHintAlways": true,
+    "TextHintAlways": true,
     "ToolTipText": null,
     "Top": 58,
     "Visible": true,
