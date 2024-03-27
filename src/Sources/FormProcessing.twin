@@ -1,5 +1,5 @@
 ' ==========================================================================
-' tBUserFormConverter v2.4
+' tBUserFormConverter v2.5
 '
 ' A VBIDE add-in (complied with twinBASIC) that converts VBA UserForms for use in twinBASIC.
 '
@@ -92,7 +92,7 @@ Module FormProcessing
         Dim activeVBProjectFileName As String
         Dim activeVBProjectFolderName As String
         
-        comdlg.DialogTitle = "Select Output Folder:"
+        comdlg.DialogTitle = "Select Output Folder to Save Forms:"
         
         'it's possible that user created a useform in a new unsaved document
         'in which case activeVBProject.FileName will fail
@@ -111,7 +111,7 @@ Module FormProcessing
  
         res = comdlg.ShowFolderBrowser()
         If Not res Then
-            MsgBox "No UserForms were converted."
+            MsgBox "No UserForms were converted.", , "Convert UserForm(s) to twinBASIC"
             'unload the form
             Converter.Close
             Set Converter = Nothing
@@ -125,7 +125,6 @@ Module FormProcessing
         useVisualStyles = (Converter.ckbUseVisualStyles.Value = vbChecked)
         use3DAppearance = (Converter.ckb3DAppearance.Value = vbChecked)
         hideIconBox = (Converter.ckbHideIconBox.Value = vbChecked)
-        saveImageResourcesToFile = (Converter.ckbSaveResources.Value = vbChecked)
         
         'unload the form
         Converter.Close
@@ -201,7 +200,7 @@ Module FormProcessing
                 Case "OptionButton"
                     ProcessOptionButton ctl, tbControl, ptsToPixels, useVBAFont, useVisualStyles, use3DAppearance
                 Case "ScrollBar"
-                    ProcessScrollBar ctl, tbControl, ptsToPixels
+                    ProcessScrollBar ctl, tbControl, ptsToPixels, useVisualStyles
                 Case "Image"
                     ProcessImage ctl, tbControl, ptsToPixels, use3DAppearance
                 Case "SpinButton"
@@ -214,16 +213,7 @@ Module FormProcessing
                 'add tB control dictionary to tB form dictionary
                 AddToParent tBForm, ctl, tbControl
             Next ctl
-            
-            If saveImageResourcesToFile Then
-                SaveFormImagesToFile userForm, folderPath
-                For Each ctl In sorted
-                    If IsSupported(ctl) Then
-                        SaveControlImagesToFile ctl, folderPath, dialogName
-                    End If
-                Next ctl
-            End If
-            
+
             'prepare for output to file
             Set rootDoc = New Collection
             rootDoc.Add tBForm
@@ -341,12 +331,98 @@ Module FormProcessing
             End If
         Next idlg
         
-        MsgBox dialogNames.Count & " UserForms were converted!"
+        MsgBox dialogNames.Count & " UserForms were converted!", , "Convert UserForm(s) to twinBASIC"
         Exit Sub
     EH:
-        MsgBox "A problem was encountered in processing the Userform(s)"
+        MsgBox "A problem was encountered in processing the Userform(s)", , "Convert UserForm(s) to twinBASIC"
     End Sub
 
+    Public Sub ExtractImageResources(activeVBProject As VBProject)
+        Dim ctl As Object
+        Dim fso As New FileSystemObject
+        Dim dialogName As String
+        Dim userForm As VBComponent
+        Dim vbc As VBComponent
+        Dim dialogNames As New Collection
+        Dim idlg As Long
+        Dim imageCount As Long
+    
+        'Initialize the form
+        For Each vbc In activeVBProject.VBComponents
+            If vbc.Type = vbext_ct_MSForm Then Extractor.lbxDialogs.AddItem vbc.Name
+        Next vbc
+    
+        'show form to user
+        Extractor.Show vbModal
+        If Extractor.CancelPressed Then
+            Extractor.Close
+            Set Extractor = Nothing
+            Exit Sub
+        End If
+    
+        'gather up the selected dialog names
+        For idlg = 0 To Extractor.lbxDialogs.ListCount - 1
+            If Extractor.lbxDialogs.Selected(idlg) = True Then dialogNames.Add Extractor.lbxDialogs.List(idlg)
+        Next idlg
+
+        'browse for output folder path
+        Dim filePath  As String
+        Dim folderPath As String
+        Dim comdlg As New VBComDlg.CommonDialog
+        Dim res As Boolean
+        Dim activeVBProjectFileName As String
+        Dim activeVBProjectFolderName As String
+        
+        comdlg.DialogTitle = "Select Output Folder to Save Resources:"
+        
+        'it's possible that user created a useform in a new unsaved document
+        'in which case activeVBProject.FileName will fail
+        On Error Resume Next
+        activeVBProjectFileName = activeVBProject.FileName
+        If Err.Number <> 0 Then
+            activeVBProjectFolderName = CurDir()
+        Else
+            activeVBProjectFolderName = fso.GetParentFolderName(activeVBProjectFileName)
+        End If
+        On Error GoTo 0
+        
+        On Error GoTo EH
+
+        comdlg.InitDir = activeVBProjectFolderName
+ 
+        res = comdlg.ShowFolderBrowser()
+        If Not res Then
+            MsgBox "No UserForms were processed.", , "Extract UserForm Image Resources"
+            'unload the form
+            Extractor.Close
+            Set Extractor = Nothing
+            Exit Sub
+        End If
+        folderPath = comdlg.FileName
+        
+        'unload the form
+        Extractor.Close
+        Set Extractor = Nothing
+        
+        'loop through and process each selected UserForm
+        For idlg = 1 To dialogNames.Count
+            dialogName = dialogNames(idlg)
+            Set userForm = activeVBProject.VBComponents(dialogName)
+            SaveFormImagesToFile userForm, folderPath, imageCount
+            'enumerate and process each UserForm control
+            For Each ctl In userForm.Designer.Controls
+                If IsSupported(ctl) Then
+                    SaveControlImagesToFile ctl, folderPath, dialogName, imageCount
+                End If
+            Next ctl
+        Next idlg
+        
+        MsgBox dialogNames.Count & " UserForms were processed." & vbCrLf & imageCount & " images were extracted and saved!", , "Extract UserForm Image Resources"
+        Exit Sub
+    EH:
+        MsgBox "A problem was encountered in processing the Userform(s)", , "Extract UserForm Image Resources"
+    End Sub
+    
     'recursive routine to search the dictionary for the parent key of ctl, 
     'and then if found, add ctl's tB dictionary to parent
     Private Function AddToParent(parent As Dictionary, ctl As Object, tbControl As Dictionary) As Boolean
@@ -615,7 +691,23 @@ Module FormProcessing
         tbControl.Item("TabIndex") = ctl.TabIndex
         tbControl.Item("TabStop") = ctl.TabStop
         tbControl.Item("Text") = ctl.Text
+        tbControl.Item("MultiLine") = ctl.MultiLine
+        tbControl.Item("MaxLength") = ctl.MaxLength
+        tbControl.Item("PasswordChar") = ctl.PasswordChar
+        tbControl.Item("Locked") = ctl.Locked
+        tbControl.Item("HideSelection") = ctl.HideSelection
         
+        Select Case ctl.ScrollBars
+        Case fmScrollBarsNone
+            tbControl.Item("ScrollBars") = "vbSBNone"
+        Case fmScrollBarsHorizontal
+            tbControl.Item("ScrollBars") = "vbHorizontal"
+        Case fmScrollBarsVertical
+            tbControl.Item("ScrollBars") = "vbVertical"
+        Case fmScrollBarsBoth
+            tbControl.Item("ScrollBars") = "vbBoth"
+        End Select
+      
         Select Case ctl.TextAlign
         Case fmTextAlignCenter
             tbControl.Item("Alignment") = "vbCenter"
@@ -978,7 +1070,7 @@ Module FormProcessing
         tbControl.Item("VisualStyles") = useVisualStyles
     End Sub
 
-    Private Sub ProcessScrollBar(ctl As Object, tbControl As Dictionary, ByVal ptsToPixels As Double)
+    Private Sub ProcessScrollBar(ctl As Object, tbControl As Dictionary, ByVal ptsToPixels As Double, ByVal useVisualStyles As Boolean)
         tbControl.Item("Name") = ctl.Name
         tbControl.Item("Height") = ctl.Height * ptsToPixels
         tbControl.Item("Width") = ctl.Width * ptsToPixels
@@ -1011,13 +1103,20 @@ Module FormProcessing
         tbControl.Item("Min") = ctl.Min
         tbControl.Item("Max") = ctl.Max
         tbControl.Item("Value") = ctl.Value
+
+        'If VisualStyles=False then ScrollBar button will blink
+        'for 5 secs until it loses focus after user moves it
+        'apparently a VB6 behavior not present in VBA
+        'set TabStop=False to prevent it from blinking
         tbControl.Item("TabStop") = ctl.TabStop
+
         tbControl.Item("TabIndex") = ctl.TabIndex
         tbControl.Item("SmallChange") = ctl.SmallChange
         tbControl.Item("LargeChange") = ctl.LargeChange
         tbControl.Item("Name") = ctl.Name
         'tBControl.Item("BackColor") = ctl.BackColor
         tbControl.Item("Tag") = ctl.Tag
+        tbControl.Item("VisualStyles") = useVisualStyles
     End Sub
     
     Private Sub ProcessToggleButton(ctl As Object, tbControl As Dictionary, ByVal ptsToPixels As Double, ByVal useVBAFont As Boolean, ByVal useVisualStyles As Boolean, ByVal use3DAppearance As Boolean)
@@ -1106,7 +1205,7 @@ Module FormProcessing
         ReadControlJson = StrConv(LoadResDataInternal(controlType, "CONTROLS"), VbStrConv.vbFromUTF8)
     End Function
     
-    Private Sub SaveControlImagesToFile(ctl As Object, ByVal folderPath As String, ByVal dialogName As String)
+    Private Sub SaveControlImagesToFile(ctl As Object, ByVal folderPath As String, ByVal dialogName As String, ByRef imageCount As Long)
         Dim fileExt As String
         Dim ctlTypeName As String
         Dim ctlPicType As Long
@@ -1132,18 +1231,20 @@ Module FormProcessing
                     fileExt = ".emf"
                 End Select
                 SavePicture ctl.Picture, folderPath & "\" & dialogName & "_" & ctl.name & "_Picture" & fileExt
+                imageCount = imageCount + 1
             End If
         Case "ComboBox", "Frame", "ScrollBar", "Label", "ListBox", "TextBox", "SpinButton"
             'has no picture - only MouseIcon
-            '*frame has Picture property in Userform but not in tB form
+            '*frame has Picture property in Userform but not in tB form yet
         End Select
 
         If ctl.MouseIcon <> vbPicTypeNone Then
             SavePicture ctl.MouseIcon, folderPath & "\" & dialogName & "_" & ctl.name & "_MouseIcon" & ".ico"
+            imageCount = imageCount + 1
         End If
     End Sub
     
-    Private Sub SaveFormImagesToFile(userForm As VBComponent, ByVal folderPath As String)
+    Private Sub SaveFormImagesToFile(userForm As VBComponent, ByVal folderPath As String, ByRef imageCount As Long)
         Dim frm As Object
         Dim dialogName As String
         Dim fileExt As String
@@ -1162,10 +1263,12 @@ Module FormProcessing
                 fileExt = ".emf"
             End Select
             SavePicture frm.Picture, folderPath & "\" & dialogName & "_" & "Form_Picture" & fileExt
+            imageCount = imageCount + 1
         End If
                  
         If frm.MouseIcon <> vbPicTypeNone Then
             SavePicture frm.MouseIcon, folderPath & "\" & dialogName & "_" & "Form_MouseIcon" & ".ico"
+            imageCount = imageCount + 1
         End If
     End Sub
 

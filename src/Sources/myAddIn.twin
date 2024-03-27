@@ -12,13 +12,15 @@ Class myAddIn
    	Private addin As VBIDE.AddIn
     Private WithEvents menuItem1Events  As VBIDE.CommandBarEvents
     Private WithEvents menuItem2Events  As VBIDE.CommandBarEvents
+    Private WithEvents menuItem3Events  As VBIDE.CommandBarEvents
     Private isConnected As Boolean
     
 	Sub OnConnection(ByVal Application As Object, _
-							ByVal ConnectMode As ext_ConnectMode, _
-							ByVal AddInInst As Object, _
-							ByRef custom As Variant()) _
-							Implements IDTExtensibility2.OnConnection
+		ByVal ConnectMode As ext_ConnectMode, _
+		ByVal AddInInst As Object, _
+		ByRef custom As Variant()) _
+		Implements IDTExtensibility2.OnConnection
+        
         Set vbe = Application
 		Set addin = AddInInst
         isConnected = True
@@ -26,8 +28,9 @@ Class myAddIn
 	End Sub
 	                          
     Sub OnDisconnection(ByVal RemoveMode As ext_DisconnectMode, _
-                            ByRef custom As Variant()) _
-                            Implements IDTExtensibility2.OnDisconnection
+        ByRef custom As Variant()) _
+        Implements IDTExtensibility2.OnDisconnection
+        
         ShutdownAddin()
     End Sub
 
@@ -37,11 +40,11 @@ Class myAddIn
 	End Sub
                                                                              	                                                       
 	Sub OnAddInsUpdate(ByRef custom As Variant()) _
-						Implements IDTExtensibility2.OnAddInsUpdate
+		Implements IDTExtensibility2.OnAddInsUpdate
 	End Sub
 	           
 	Sub OnStartupComplete(ByRef custom As Variant()) _
-						Implements IDTExtensibility2.OnStartupComplete
+		Implements IDTExtensibility2.OnStartupComplete
         ' When opening the addin manually (with Load on Startup off), this won't be triggered
 	End Sub
 
@@ -52,6 +55,7 @@ Class myAddIn
         Set vbe = Nothing
         Set menuItem1Events = Nothing
         Set menuItem2Events = Nothing
+        Set menuItem3Events = Nothing
         isConnected = False
     End Sub
 
@@ -63,6 +67,7 @@ Class myAddIn
         Dim menu As CommandBarPopup
         Dim menuItem1 As CommandBarButton
         Dim menuItem2 As CommandBarButton
+        Dim menuItem3 As CommandBarButton
         
         Set menu = vbe.CommandBars("Menu Bar").Controls.Add(Type:=msoControlPopup)
         With menu
@@ -75,8 +80,13 @@ Class myAddIn
             End With
             Set menuItem2 = .Controls.Add(Type:=msoControlButton)
             With menuItem2
-                .Caption = "&About"
+                .Caption = "&Extract Image Resources"
                 Set menuItem2Events = vbe.Events.CommandBarEvents(menuItem2)
+            End With
+            Set menuItem3 = .Controls.Add(Type:=msoControlButton)
+            With menuItem3
+                .Caption = "&About"
+                Set menuItem3Events = vbe.Events.CommandBarEvents(menuItem3)
             End With
         End With
     End Sub
@@ -89,18 +99,25 @@ Class myAddIn
     End Sub
     
     Private Sub menuItem1Events_Click(ByVal CommandBarControl As Object, _
-                ByRef Handled As Boolean, ByRef CancelDefault As Boolean) Handles menuItem1Events.Click
-        exportUserForm Me.GetVBE().ActiveVBProject
+        ByRef Handled As Boolean, ByRef CancelDefault As Boolean) Handles menuItem1Events.Click
+        ExportUserForm Me.GetVBE().ActiveVBProject
         Handled = True
         CancelDefault = False
     End Sub
     
     Private Sub menuItem2Events_Click(ByVal CommandBarControl As Object, _
-                ByRef Handled As Boolean, ByRef CancelDefault As Boolean) Handles menuItem2Events.Click
+        ByRef Handled As Boolean, ByRef CancelDefault As Boolean) Handles menuItem2Events.Click
+        ExtractImageResources Me.GetVBE().ActiveVBProject
+        Handled = True
+        CancelDefault = False
+    End Sub
+    
+    Private Sub menuItem3Events_Click(ByVal CommandBarControl As Object, _
+        ByRef Handled As Boolean, ByRef CancelDefault As Boolean) Handles menuItem3Events.Click
         About.Show(vbModal)
         Set About = Nothing
         Handled = True
         CancelDefault = False
     End Sub
-    
+
 End Class

@@ -30,6 +30,7 @@
     "Top": 183,
     "Value": 0,
     "Visible": true,
+    "VisualStyles": true,
     "WhatsThisHelpID": 0,
     "Width": 32,
     "_className": "VScrollBar",

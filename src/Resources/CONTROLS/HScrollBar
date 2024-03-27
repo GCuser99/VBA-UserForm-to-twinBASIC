@@ -30,6 +30,7 @@
     "Top": 81,
     "Value": 0,
     "Visible": true,
+    "VisualStyles": true,
     "WhatsThisHelpID": 0,
     "Width": 92,
     "_className": "HScrollBar",

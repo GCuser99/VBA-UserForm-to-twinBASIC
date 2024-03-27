@@ -1,5 +1,9 @@
 Module MyModule
 
 	' add your procedures here
-
+    Sub testform()
+        Converter.Show vbModal
+        Converter.Close
+        Set Converter = Nothing
+    End Sub
 End Module

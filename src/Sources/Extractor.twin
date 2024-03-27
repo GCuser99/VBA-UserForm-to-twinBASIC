@@ -1,8 +1,8 @@
 [Description("")]
-[FormDesignerId("BCA94248-FB88-D34B-AE3D-E887439ECECF")]
+[FormDesignerId("F81F4A88-531A-4DB5-BB8C-1414C82FBF25")]
 [PredeclaredId]
 
-Class Converter
+Class Extractor
 
 	Private mCancelPressed As Boolean
 	Private mUserFormSelected As Boolean
@@ -11,7 +11,7 @@ Class Converter
 	    CancelPressed = mCancelPressed
 	End Property
 	
-	Private Sub cmdConvert_Click()
+	Private Sub cmdExtract_Click()
 	    Me.Hide
 	End Sub
 	
@@ -25,7 +25,7 @@ Class Converter
 	    For i = 0 To Me.lbxDialogs.ListCount - 1
 	        Me.lbxDialogs.Selected(i) = False
 	    Next i
-	    cmdConvert.Enabled = False
+	    cmdExtract.Enabled = False
 	    cmdDeselectAll.Enabled = False
 	End Sub
 	
@@ -37,24 +37,19 @@ Class Converter
 	End Sub
 	
 	Private Sub lbxDialogs_Click()
-        mUserFormSelected = True
-        If Me.lbxDialogs.ListCount > 0 Then
-            cmdConvert.Enabled = True
-            cmdDeselectAll.Enabled = True
-        Else
-            cmdConvert.Enabled = False
-            cmdDeselectAll.Enabled = False
-        End If
+		mUserFormSelected = True
+		If Me.lbxDialogs.ListCount > 0 Then
+            cmdExtract.Enabled = True
+			cmdDeselectAll.Enabled = True
+		Else
+            cmdExtract.Enabled = False
+			cmdDeselectAll.Enabled = False
+		End If
 	End Sub
 	
 	Private Sub New()
-		cmdConvert.Enabled = False
-		ckbOutputCode.Value = vbChecked
+        cmdExtract.Enabled = False
 		cmdDeselectAll.Enabled = False
-		ckbUseVisualStyles.Value = vbUnchecked
-		ckb3DAppearance.Value = vbChecked
-		optUseVBAFonts.Value = True
-		ckbHideIconBox.Value = vbChecked
 		Set Me.Icon = GetImageFromResources("twinBASIC.ico", "IMAGES")
 	End Sub
 	
