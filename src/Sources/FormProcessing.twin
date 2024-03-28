@@ -1,5 +1,5 @@
 ' ==========================================================================
-' tBUserFormConverter v2.5
+' tBUserFormConverter v2.6
 '
 ' A VBIDE add-in (complied with twinBASIC) that converts VBA UserForms for use in twinBASIC.
 '
@@ -33,6 +33,84 @@
 ' ==========================================================================
 
 Module FormProcessing
+    
+    '---------------------------------------------------------------------
+    ' MS Forms Enums
+    '---------------------------------------------------------------------    
+    Private Enum fmMousePointer
+        fmMousePointerDefault = 0                            ' &H00000000&
+        fmMousePointerArrow = 1                              ' &H00000001&
+        fmMousePointerCross = 2                              ' &H00000002&
+        fmMousePointerIBeam = 3                              ' &H00000003&
+        fmMousePointerSizeNESW = 6                           ' &H00000006&
+        fmMousePointerSizeNS = 7                             ' &H00000007&
+        fmMousePointerSizeNWSE = 8                           ' &H00000008&
+        fmMousePointerSizeWE = 9                             ' &H00000009&
+        fmMousePointerUpArrow = 10                           ' &H0000000A&
+        fmMousePointerHourGlass = 11                         ' &H0000000B&
+        fmMousePointerNoDrop = 12                            ' &H0000000C&
+        fmMousePointerAppStarting = 13                       ' &H0000000D&
+        fmMousePointerHelp = 14                              ' &H0000000E&
+        fmMousePointerSizeAll = 15                           ' &H0000000F&
+        fmMousePointerCustom = 99                            ' &H00000063&
+    End Enum
+
+    Private Enum fmScrollBars
+        fmScrollBarsNone = 0                                 ' &H00000000&
+        fmScrollBarsHorizontal = 1                           ' &H00000001&
+        fmScrollBarsVertical = 2                             ' &H00000002&
+        fmScrollBarsBoth = 3                                 ' &H00000003&
+    End Enum
+
+    Private Enum fmBorderStyle
+        fmBorderStyleNone = 0                                ' &H00000000&
+        fmBorderStyleSingle = 1                              ' &H00000001&
+    End Enum
+
+    Private Enum fmTextAlign
+        fmTextAlignLeft = 1                                  ' &H00000001&
+        fmTextAlignCenter = 2                                ' &H00000002&
+        fmTextAlignRight = 3                                 ' &H00000003&
+    End Enum
+
+    Private Enum fmBackStyle
+        fmBackStyleTransparent = 0                           ' &H00000000&
+        fmBackStyleOpaque = 1                                ' &H00000001&
+    End Enum
+
+    Private Enum fmOrientation
+        fmOrientationAuto = -1                               ' &HFFFFFFFF&
+        fmOrientationVertical = 0                            ' &H00000000&
+        fmOrientationHorizontal = 1                          ' &H00000001&
+    End Enum
+
+    Private Enum fmMultiSelect
+        fmMultiSelectSingle = 0                              ' &H00000000&
+        fmMultiSelectMulti = 1                               ' &H00000001&
+        fmMultiSelectExtended = 2                            ' &H00000002&
+    End Enum
+
+    Private Enum fmListStyle
+        fmListStylePlain = 0                                 ' &H00000000&
+        fmListStyleOption = 1                                ' &H00000001&
+    End Enum
+    
+    Enum fmSpecialEffect
+        fmSpecialEffectFlat = 0                              ' &H00000000&
+        fmSpecialEffectRaised = 1                            ' &H00000001&
+        fmSpecialEffectSunken = 2                            ' &H00000002&
+        fmSpecialEffectEtched = 3                            ' &H00000003&
+        fmSpecialEffectBump = 6                              ' &H00000006&
+    End Enum
+
+    Private Enum fmStyle
+        fmStyleDropDownCombo = 0                             ' &H00000000&
+        fmStyleDropDownList = 2                              ' &H00000002&
+    End Enum
+
+    '---------------------------------------------------------------------
+    ' Public Forms Processing (called by Menu entries)
+    '---------------------------------------------------------------------
 
     Public Sub ExportUserForm(activeVBProject As VBProject)
         Dim ctl As Object
@@ -439,6 +517,10 @@ Module FormProcessing
         End If
     End Function
 
+    '---------------------------------------------------------------------
+    ' Private Support Procedures
+    '---------------------------------------------------------------------
+    
     'sort controls in order of descendancy - must process parent controls before their descendants!
     Private Function SortControls(frm As Object, ByVal dialogName As String) As Collection
         Dim sorted As New Collection
@@ -594,7 +676,12 @@ Module FormProcessing
         tbControl.Item("AutoSize") = ctl.AutoSize
         
         If ctl.BackStyle = fmBackStyleTransparent Then tbControl.Item("BackStyle") = "vbBFTransparent"
-        tbControl.Item("BorderStyle") = IIf(ctl.BorderStyle = fmBorderStyleNone, "vbNoBorder", "vbFixedSingleBorder")
+        
+        If ctl.SpecialEffect = fmSpecialEffectFlat Then
+            tbControl.Item("BorderStyle") = IIf(ctl.BorderStyle = fmBorderStyleNone, "vbNoBorder", "vbFixedSingleBorder")
+        Else
+            tbControl.Item("BorderStyle") = "vbFixedSingleBorder"
+        End If
 
         'tbControl.Item("HelpContextID") = ctl.HelpContextID
         tbControl.Item("ToolTipText") = ctl.ControlTipText
@@ -717,7 +804,11 @@ Module FormProcessing
             tbControl.Item("Alignment") = "vbRightJustify"
         End Select
         
-        tbControl.Item("BorderStyle") = IIf(ctl.BorderStyle = fmBorderStyleNone, "vbNoBorder", "vbFixedSingleBorder")
+        If ctl.SpecialEffect = fmSpecialEffectFlat Then
+            tbControl.Item("BorderStyle") = IIf(ctl.BorderStyle = fmBorderStyleNone, "vbNoBorder", "vbFixedSingleBorder")
+        Else
+            tbControl.Item("BorderStyle") = "vbFixedSingleBorder"
+        End If
         
         tbControl.Item("VisualStyles") = useVisualStyles
         If use3DAppearance Then tbControl.Item("Appearance") = vbAppear3d Else tbControl.Item("Appearance") = vbAppearFlat
@@ -753,9 +844,19 @@ Module FormProcessing
         If useVBAFont Then SetFontProperties tbControl, ctl
         tbControl.Item("BackColor") = ctl.BackColor
         tbControl.Item("ForeColor") = ctl.ForeColor
-        If ctl.Caption = "" Then
+        
+        'If ctl.Caption = "" Then
+       '     tbControl.Item("BorderStyle") = IIf(ctl.BorderStyle = fmBorderStyleNone, "vbNoBorder", "vbFixedSingleBorder")
+        'End If
+        
+        If ctl.SpecialEffect = fmSpecialEffectFlat Then
             tbControl.Item("BorderStyle") = IIf(ctl.BorderStyle = fmBorderStyleNone, "vbNoBorder", "vbFixedSingleBorder")
+        Else
+            tbControl.Item("BorderStyle") = "vbFixedSingleBorder"
         End If
+        
+        
+        
         tbControl.Item("Caption") = ctl.Caption
         tbControl.Item("VisualStyles") = useVisualStyles
         If use3DAppearance Then tbControl.Item("Appearance") = vbAppear3d Else tbControl.Item("Appearance") = vbAppearFlat
@@ -850,7 +951,11 @@ Module FormProcessing
         tbControl.Item("TabIndex") = ctl.TabIndex
         tbControl.Item("TabStop") = ctl.TabStop
         
-        tbControl.Item("BorderStyle") = IIf(ctl.BorderStyle = fmBorderStyleNone, "vbNoBorder", "vbFixedSingleBorder")
+        If ctl.SpecialEffect = fmSpecialEffectFlat Then
+            tbControl.Item("BorderStyle") = IIf(ctl.BorderStyle = fmBorderStyleNone, "vbNoBorder", "vbFixedSingleBorder")
+        Else
+            tbControl.Item("BorderStyle") = "vbFixedSingleBorder"
+        End If
     
         'tb is vbComboDropdown,vbComboSimple,vbComboDropdownList
         Select Case ctl.Style
@@ -916,7 +1021,11 @@ Module FormProcessing
             tbControl.Item("Style") = "vbListBoxCheckBox"
         End Select
         
-        tbControl.Item("BorderStyle") = IIf(ctl.BorderStyle = fmBorderStyleNone, "vbNoBorder", "vbFixedSingleBorder")
+        If ctl.SpecialEffect = fmSpecialEffectFlat Then
+            tbControl.Item("BorderStyle") = IIf(ctl.BorderStyle = fmBorderStyleNone, "vbNoBorder", "vbFixedSingleBorder")
+        Else
+            tbControl.Item("BorderStyle") = "vbFixedSingleBorder"
+        End If
         
         tbControl.Item("IntegralHeight") = ctl.IntegralHeight
         tbControl.Item("Columns") = ctl.ColumnCount - 1 '?

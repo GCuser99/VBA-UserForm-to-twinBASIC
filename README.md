@@ -13,7 +13,7 @@ The resulting imported form and code may have to be tweaked in **twinBASIC** to 
 
 **MS Forms controls not yet supported**: TabStrip, and MultiPage.
 
-**Extract Image Resources Option**: User can optionally extract and save to file all image resources (mouse icons and picture bitmaps) that are embedded in each UserForm for later use as a **twinBASIC** resource.
+**Extract Image Resources Option**: User can optionally extract and save to file all image resources (mouse icons and picture bitmaps) that are embedded in each UserForm for later use in **twinBASIC** Resources.
 
 <img src="https://github.com/GCuser99/VBA-UserForm-to-twinBASIC/blob/main/images/nested_controls.png" alt="NestedControls" width=95% height=95%>
 
@@ -27,7 +27,7 @@ The resulting imported form and code may have to be tweaked in **twinBASIC** to 
 ## Quick How-To-Use
 
 1) Make sure to close all MS Office applications.
-2) Run the included tBUserformConverterSetup.exe Inno installer.
+2) Download and run the tBUserformConverterSetup.exe Inno installer.
 3) Open an MS Office document that contains UserForm(s) to be converted.
 4) Open the Visual Basic for Application IDE.
 5) You should see the "twinBASIC Tools" menu item on the far right of the main menu bar.
