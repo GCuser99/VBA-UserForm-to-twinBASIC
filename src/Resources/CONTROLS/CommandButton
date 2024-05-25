@@ -39,6 +39,7 @@
     "MousePointer": "vbDefault",
     "Name": "CommandButton1",
     "OLEDropMode": "vbOLEDropNone",
+    "Opacity": 100,
     "Padding": 2,
     "Picture": [
     ],
@@ -51,6 +52,7 @@
     "Tag": "",
     "ToolTipText": null,
     "Top": 118.666666666667,
+    "TransparencyKey": -1,
     "UseMaskColor": false,
     "Visible": true,
     "VisualStyles": true,

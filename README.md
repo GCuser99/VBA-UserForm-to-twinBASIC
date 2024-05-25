@@ -17,7 +17,7 @@ The resulting imported form and code may have to be tweaked in **twinBASIC** to 
 
 <img src="https://github.com/GCuser99/VBA-UserForm-to-twinBASIC/blob/main/images/nested_controls.png" alt="NestedControls" width=95% height=95%>
 
-**Example**: Comparison of VBA UserForm (left) and converted twinBASIC form (right)
+**Example**: Comparison of VBA UserForm (left) and converted twinBASIC form with VisualStyles=False (right)
 
 ## Requirements:
 

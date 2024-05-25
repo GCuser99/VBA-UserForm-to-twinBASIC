@@ -5,10 +5,10 @@ Class About
 
 	Sub New()
         lblInfo.Caption = "Author: GCUser99" & vbCrLf & _  
-        "Version: v2.6" & vbCrLf & _  
+        "Version: " & App.Major & "." & App.Minor & vbCrLf & _  
         "Description: A VBIDE add-in (complied with twinBASIC) that converts VBA UserForms for use in twinBASIC."
         lblWebsite.Caption = "https://github.com/GCuser99/VBA-UserForm-to-twinBASIC"
-        Set Me.Icon = GetImageFromResources("transparent.ico", "IMAGES")
+        Set Me.Icon = Global.LoadResPicture("About_32.ico", vbResIcon)
     End Sub
     
     Private Sub cmdOK_Click()
@@ -16,7 +16,10 @@ Class About
     End Sub
     
     Private Sub Form_QueryUnload(Cancel As Integer, UnloadMode As Integer)
-        If UnloadMode = 0 Then Cancel = True: Me.Close
+        If UnloadMode = vbFormControlMenu Then
+            Cancel = True
+            Me.Close
+        End If
     End Sub
     
 End Class

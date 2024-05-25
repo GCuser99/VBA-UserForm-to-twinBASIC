@@ -30,12 +30,11 @@ Class myAddIn
     Sub OnDisconnection(ByVal RemoveMode As ext_DisconnectMode, _
         ByRef custom As Variant()) _
         Implements IDTExtensibility2.OnDisconnection
-        
         ShutdownAddin()
     End Sub
 
  	Sub OnBeginShutdown(ByRef custom As Variant()) _
-						Implements IDTExtensibility2.OnBeginShutdown
+		Implements IDTExtensibility2.OnBeginShutdown
         ShutdownAddin()     ' the earlier we release everything back to VBIDE, the better
 	End Sub
                                                                              	                                                       
@@ -76,16 +75,19 @@ Class myAddIn
             Set menuItem1 = .Controls.Add(Type:=msoControlButton)
             With menuItem1
                 .Caption = "&Convert UserForms"
+                .Picture = GetImageFromResources("ConvertForms_16.bmp", "IMAGES")
                 Set menuItem1Events = vbe.Events.CommandBarEvents(menuItem1)
             End With
             Set menuItem2 = .Controls.Add(Type:=msoControlButton)
             With menuItem2
                 .Caption = "&Extract Image Resources"
+                .Picture = GetImageFromResources("ExtractResources_16.bmp", "IMAGES")
                 Set menuItem2Events = vbe.Events.CommandBarEvents(menuItem2)
             End With
             Set menuItem3 = .Controls.Add(Type:=msoControlButton)
             With menuItem3
                 .Caption = "&About"
+                .Picture = GetImageFromResources("About_16.bmp", "IMAGES")
                 Set menuItem3Events = vbe.Events.CommandBarEvents(menuItem3)
             End With
         End With

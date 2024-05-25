@@ -48,7 +48,7 @@
     "Palette": "",
     "PaletteMode": "vbPaletteModeHalftone",
     "Picture": "",
-    "PictureDpiScaling": true,
+    "PictureDpiScaling": true,  
     "RightToLeft": false,
     "ScaleHeight": 4500,
     "ScaleLeft": 0,

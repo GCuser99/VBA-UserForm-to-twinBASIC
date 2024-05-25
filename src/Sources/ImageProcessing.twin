@@ -1,5 +1,5 @@
 ' ==========================================================================
-' tBUserFormConverter v2.6
+' tBUserFormConverter v2.7
 '
 ' A VBIDE add-in (complied with twinBASIC) that converts VBA UserForms for use in twinBASIC.
 '
@@ -34,13 +34,11 @@
 
 Module ImageProcessing
     Option Explicit
+    
+    'Note: This module refers to Declarations, enums, and types from tB's Windows Development Library Package
 
-    #If VBA7 Then
-    Private Declare PtrSafe Function CryptBinaryToString Lib "crypt32" Alias "CryptBinaryToStringW" (ByVal pbBinary As LongPtr, ByVal cbBinary As Long, ByVal dwFlags As Long, ByVal pszString As LongPtr, pcchString As Long) As Long
-    #Else
-    Private Declare Function CryptBinaryToString Lib "crypt32" Alias "CryptBinaryToStringW" (ByVal pbBinary As Long, ByVal cbBinary As Long, ByVal dwFlags As Long, ByVal pszString As Long, pcchString As Long) As Long
-    #End If
-
+    Private DeclareWide PtrSafe Function CryptBinaryToString Lib "crypt32" Alias "CryptBinaryToStringW" (pbBinary As Any, ByVal cbBinary As Long, ByVal dwFlags As CRYPT_STRING_OPTIONS, ByVal pszString As String, pcchString As Long) As BOOL
+    
     'https://learn.microsoft.com/en-us/windows/win32/api/wincrypt/nf-wincrypt-cryptbinarytostringa
     Private Const CRYPT_STRING_BASE64 As Long = &H1 'Base64, without headers.
     Private Const CRYPT_STRING_NOCRLF As Long = &H40000000& 'Do not append any new line characters to the encoded string.
@@ -55,15 +53,14 @@ Module ImageProcessing
     
     Public Function GetImageString(pic As stdole.IPictureDisp) As String
         Dim bytes() As Byte
-        If pic Is Nothing Then Exit Function
-        bytes = BytesFromPicture(pic)
+        bytes = PictureToByteArray(pic)
         GetImageString = ToBase64Array(bytes)
     End Function
     
     Public Function GetTransparentIconString() As String
     	'used to hide the icon box on the form title bar
         Dim bytes() As Byte
-        bytes = LoadResData("transparent.ico", "IMAGES")
+        bytes = LoadResData("Transparent_16.ico", "IMAGES")
         GetTransparentIconString = ToBase64Array(bytes)
     End Function
     
@@ -79,18 +76,9 @@ Module ImageProcessing
         If UBound(bytes) >= 0 Then
             ToBase64Array = String$(2 * UBound(bytes) + 6, 0)
             lSize = Len(ToBase64Array) + 1
-            Call CryptBinaryToString(VarPtr(bytes(0)), UBound(bytes) + 1, CRYPT_STRING_BASE64 Or CRYPT_STRING_NOCRLF, StrPtr(ToBase64Array), lSize)
+            Call CryptBinaryToString(bytes(0), UBound(bytes) + 1, CRYPT_STRING_BASE64 Or CRYPT_STRING_NOCRLF, ToBase64Array, lSize)
             ToBase64Array = Left$(ToBase64Array, lSize)
         End If
     End Function
-
-    Private Function BytesFromPicture(pic As IPictureDisp) As Byte()
-        Dim pb As PropertyBag
-        Dim dataOffset As Long = 55
-        Set pb = New PropertyBag
-        pb.WriteProperty "Image", pic
-        'skip the stdPicture header on output
-        BytesFromPicture = MidB(pb.Contents, dataOffset)
-    End Function
-        
+    
 End Module

@@ -50,11 +50,15 @@ Class Extractor
 	Private Sub New()
         cmdExtract.Enabled = False
 		cmdDeselectAll.Enabled = False
-		Set Me.Icon = GetImageFromResources("twinBASIC.ico", "IMAGES")
+        Set Me.Icon = Global.LoadResPicture("ExtractResources_32.ico", vbResIcon)
 	End Sub
 	
 	Private Sub Form_QueryUnload(Cancel As Integer, UnloadMode As Integer)
-	    If UnloadMode = 0 Then mCancelPressed = True: Cancel = True: Me.Hide
+	    If UnloadMode = vbFormControlMenu Then
+            mCancelPressed = True
+            Cancel = True
+            Me.Hide
+        End If
 	End Sub
 
 End Class

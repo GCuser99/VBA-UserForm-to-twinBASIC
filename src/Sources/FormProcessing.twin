@@ -1,5 +1,5 @@
 ' ==========================================================================
-' tBUserFormConverter v2.6
+' tBUserFormConverter v2.7
 '
 ' A VBIDE add-in (complied with twinBASIC) that converts VBA UserForms for use in twinBASIC.
 '
@@ -34,78 +34,84 @@
 
 Module FormProcessing
     
+    /*
+    Notes:
+    As of v544, all covered controls have Opacity except for Label and Image controls
+    */
+    
     '---------------------------------------------------------------------
     ' MS Forms Enums
-    '---------------------------------------------------------------------    
+    '---------------------------------------------------------------------
+
     Private Enum fmMousePointer
-        fmMousePointerDefault = 0                            ' &H00000000&
-        fmMousePointerArrow = 1                              ' &H00000001&
-        fmMousePointerCross = 2                              ' &H00000002&
-        fmMousePointerIBeam = 3                              ' &H00000003&
-        fmMousePointerSizeNESW = 6                           ' &H00000006&
-        fmMousePointerSizeNS = 7                             ' &H00000007&
-        fmMousePointerSizeNWSE = 8                           ' &H00000008&
-        fmMousePointerSizeWE = 9                             ' &H00000009&
-        fmMousePointerUpArrow = 10                           ' &H0000000A&
-        fmMousePointerHourGlass = 11                         ' &H0000000B&
-        fmMousePointerNoDrop = 12                            ' &H0000000C&
-        fmMousePointerAppStarting = 13                       ' &H0000000D&
-        fmMousePointerHelp = 14                              ' &H0000000E&
-        fmMousePointerSizeAll = 15                           ' &H0000000F&
-        fmMousePointerCustom = 99                            ' &H00000063&
+        fmMousePointerDefault = 0
+        fmMousePointerArrow = 1
+        fmMousePointerCross = 2
+        fmMousePointerIBeam = 3
+        fmMousePointerSizeNESW = 6
+        fmMousePointerSizeNS = 7
+        fmMousePointerSizeNWSE = 8
+        fmMousePointerSizeWE = 9
+        fmMousePointerUpArrow = 10
+        fmMousePointerHourGlass = 11
+        fmMousePointerNoDrop = 12
+        fmMousePointerAppStarting = 13
+        fmMousePointerHelp = 14
+        fmMousePointerSizeAll = 15
+        fmMousePointerCustom = 99
     End Enum
 
     Private Enum fmScrollBars
-        fmScrollBarsNone = 0                                 ' &H00000000&
-        fmScrollBarsHorizontal = 1                           ' &H00000001&
-        fmScrollBarsVertical = 2                             ' &H00000002&
-        fmScrollBarsBoth = 3                                 ' &H00000003&
+        fmScrollBarsNone = 0
+        fmScrollBarsHorizontal = 1
+        fmScrollBarsVertical = 2
+        fmScrollBarsBoth = 3
     End Enum
 
     Private Enum fmBorderStyle
-        fmBorderStyleNone = 0                                ' &H00000000&
-        fmBorderStyleSingle = 1                              ' &H00000001&
+        fmBorderStyleNone = 0
+        fmBorderStyleSingle = 1
     End Enum
 
     Private Enum fmTextAlign
-        fmTextAlignLeft = 1                                  ' &H00000001&
-        fmTextAlignCenter = 2                                ' &H00000002&
-        fmTextAlignRight = 3                                 ' &H00000003&
+        fmTextAlignLeft = 1
+        fmTextAlignCenter = 2
+        fmTextAlignRight = 3
     End Enum
 
     Private Enum fmBackStyle
-        fmBackStyleTransparent = 0                           ' &H00000000&
-        fmBackStyleOpaque = 1                                ' &H00000001&
+        fmBackStyleTransparent = 0
+        fmBackStyleOpaque = 1
     End Enum
 
     Private Enum fmOrientation
-        fmOrientationAuto = -1                               ' &HFFFFFFFF&
-        fmOrientationVertical = 0                            ' &H00000000&
-        fmOrientationHorizontal = 1                          ' &H00000001&
+        fmOrientationAuto = -1
+        fmOrientationVertical = 0
+        fmOrientationHorizontal = 1
     End Enum
 
     Private Enum fmMultiSelect
-        fmMultiSelectSingle = 0                              ' &H00000000&
-        fmMultiSelectMulti = 1                               ' &H00000001&
-        fmMultiSelectExtended = 2                            ' &H00000002&
+        fmMultiSelectSingle = 0
+        fmMultiSelectMulti = 1
+        fmMultiSelectExtended = 2
     End Enum
 
     Private Enum fmListStyle
-        fmListStylePlain = 0                                 ' &H00000000&
-        fmListStyleOption = 1                                ' &H00000001&
+        fmListStylePlain = 0
+        fmListStyleOption = 1
     End Enum
     
     Enum fmSpecialEffect
-        fmSpecialEffectFlat = 0                              ' &H00000000&
-        fmSpecialEffectRaised = 1                            ' &H00000001&
-        fmSpecialEffectSunken = 2                            ' &H00000002&
-        fmSpecialEffectEtched = 3                            ' &H00000003&
-        fmSpecialEffectBump = 6                              ' &H00000006&
+        fmSpecialEffectFlat = 0
+        fmSpecialEffectRaised = 1
+        fmSpecialEffectSunken = 2
+        fmSpecialEffectEtched = 3
+        fmSpecialEffectBump = 6
     End Enum
 
     Private Enum fmStyle
-        fmStyleDropDownCombo = 0                             ' &H00000000&
-        fmStyleDropDownList = 2                              ' &H00000002&
+        fmStyleDropDownCombo = 0
+        fmStyleDropDownList = 2
     End Enum
 
     '---------------------------------------------------------------------
@@ -501,6 +507,10 @@ Module FormProcessing
         MsgBox "A problem was encountered in processing the Userform(s)", , "Extract UserForm Image Resources"
     End Sub
     
+    '---------------------------------------------------------------------
+    ' Private Support Procedures
+    '---------------------------------------------------------------------
+    
     'recursive routine to search the dictionary for the parent key of ctl, 
     'and then if found, add ctl's tB dictionary to parent
     Private Function AddToParent(parent As Dictionary, ctl As Object, tbControl As Dictionary) As Boolean
@@ -516,10 +526,6 @@ Module FormProcessing
             End If
         End If
     End Function
-
-    '---------------------------------------------------------------------
-    ' Private Support Procedures
-    '---------------------------------------------------------------------
     
     'sort controls in order of descendancy - must process parent controls before their descendants!
     Private Function SortControls(frm As Object, ByVal dialogName As String) As Collection
@@ -730,6 +736,7 @@ Module FormProcessing
         'unlike the other tB controls, CommandButton BackColor property does not take effect
         'unless Style property is set to vbButtonGraphical
         If ctl.BackColor <> -2147483633 Then tbControl.Item("Style") = "vbButtonGraphical"
+        If ctl.BackStyle = fmBackStyleTransparent Then tbControl.Item("Opacity") = 0
         tbControl.Item("ForeColor") = ctl.ForeColor
         tbControl.Item("TabIndex") = ctl.TabIndex
         tbControl.Item("TabStop") = ctl.TabStop
@@ -783,6 +790,7 @@ Module FormProcessing
         tbControl.Item("PasswordChar") = ctl.PasswordChar
         tbControl.Item("Locked") = ctl.Locked
         tbControl.Item("HideSelection") = ctl.HideSelection
+        If ctl.BackStyle = fmBackStyleTransparent Then tbControl.Item("Opacity") = 0
         
         Select Case ctl.ScrollBars
         Case fmScrollBarsNone
@@ -854,9 +862,7 @@ Module FormProcessing
         Else
             tbControl.Item("BorderStyle") = "vbFixedSingleBorder"
         End If
-        
-        
-        
+    
         tbControl.Item("Caption") = ctl.Caption
         tbControl.Item("VisualStyles") = useVisualStyles
         If use3DAppearance Then tbControl.Item("Appearance") = vbAppear3d Else tbControl.Item("Appearance") = vbAppearFlat
@@ -898,6 +904,7 @@ Module FormProcessing
         tbControl.Item("Value") = IIf(ctl.Value, "vbChecked", "vbUnchecked")
         tbControl.Item("TabIndex") = ctl.TabIndex
         tbControl.Item("TabStop") = ctl.TabStop
+        If ctl.BackStyle = fmBackStyleTransparent Then tbControl.Item("Opacity") = 0
         
         Select Case ctl.TextAlign
         Case fmTextAlignCenter
@@ -948,8 +955,8 @@ Module FormProcessing
         tbControl.Item("BackColor") = ctl.BackColor
         tbControl.Item("ForeColor") = ctl.ForeColor
         tbControl.Item("TabIndex") = ctl.TabIndex
-        tbControl.Item("TabIndex") = ctl.TabIndex
         tbControl.Item("TabStop") = ctl.TabStop
+        If ctl.BackStyle = fmBackStyleTransparent Then tbControl.Item("Opacity") = 0
         
         If ctl.SpecialEffect = fmSpecialEffectFlat Then
             tbControl.Item("BorderStyle") = IIf(ctl.BorderStyle = fmBorderStyleNone, "vbNoBorder", "vbFixedSingleBorder")
@@ -1069,6 +1076,7 @@ Module FormProcessing
         tbControl.Item("TabIndex") = ctl.TabIndex
         tbControl.Item("Caption") = ctl.Caption
         tbControl.Item("Value") = ctl.Value
+        If ctl.BackStyle = fmBackStyleTransparent Then tbControl.Item("Opacity") = 0
         
         Select Case ctl.TextAlign
         Case fmTextAlignCenter
@@ -1121,6 +1129,8 @@ Module FormProcessing
         tbControl.Item("BackColor") = ctl.BackColor
         tbControl.Item("Name") = ctl.Name
         tbControl.Item("Appearance") = IIf(ctl.SpecialEffect = 0, "vbAppearFlat", "vbAppear3D") 'all controls except for scrollbars
+        'UserForm's Image has BackStyle, yet tB's does not (v544)
+        'If ctl.BackStyle = fmBackStyleTransparent Then tbControl.Item("Opacity") = 0
         'If use3DAppearance Then tbControl.Item("Appearance") = vbAppear3d Else tbControl.Item("Appearance") = vbAppearFlat
     
         If ctl.Picture IsNot Nothing Then
