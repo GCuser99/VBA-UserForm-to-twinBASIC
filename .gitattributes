@@ -3,7 +3,7 @@
 # By default, auto detect text files and perform LF normalization
 * text=auto eol=lf
 
-# VBA code (bas,cls,frm) - Prevent LF normalization
+# VBA code (bas, cls, frm) - Prevent LF normalization
 *.[bB][aA][sS] -text diff linguist-language=VBA
 *.[cC][lL][sS] -text diff linguist-language=VBA
 *.[fF][rR][mM] -text diff linguist-language=VBA
@@ -16,7 +16,7 @@
 
 # twinBASIC code (twin, tbform) - Prevent LF normalization
 *.[tT][wW][iI][nN] -text diff linguist-language=VBA
-*.[tT][bB][fF][oO][rR][mM] -text diff
+*.[tT][bB][fF][oO][rR][mM] -text diff linguist-language=JSON
 
 # twinBASIC Resources (json, xml) - Prevent LF normalization
 *.[jJ][sS][oO][nN] -text diff
@@ -41,14 +41,14 @@
 # Word documents (rtf)
 *.[rR][tT][fF] diff=astextplain
 
-# Images (jpg,png,bmp,gif.ico)           
+# Images (jpg, png, bmp, gif, ico)           
 *.[jJ][pP][gG] binary
 *.[pP][nN][gG] binary
 *.[bB][mM][pP] binary
 *.[gG][iI][fF] binary
 *.[iI][cC][oO] binary
 
-# Executables (exe,dll)
+# Executables (exe, dll)
 *.[eE][xX][eE] binary
 *.[dD][lL][lL] binary
 
