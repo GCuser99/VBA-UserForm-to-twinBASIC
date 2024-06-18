@@ -14,8 +14,10 @@
 # VBS - Prevent LF normalization
 *.[vV][bB][sS] -text diff linguist-language=VBScript
 
-# twinBASIC code (twin, tbform) - Prevent LF normalization
+# twinBASIC code (twin) - Prevent LF normalization
 *.[tT][wW][iI][nN] -text diff linguist-language=VBA
+
+# twinBASIC form (tbform) - Prevent LF normalization
 *.[tT][bB][fF][oO][rR][mM] -text diff linguist-language=JSON
 
 # twinBASIC Resources (json, xml) - Prevent LF normalization
