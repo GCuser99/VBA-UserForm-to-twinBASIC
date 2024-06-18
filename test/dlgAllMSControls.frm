@@ -15,7 +15,11 @@ Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
 
 Private Sub CheckBox1_Click()
-    TextBox1.Enabled = CheckBox1.Value
+    If CheckBox1.Value Then
+        TextBox1.Enabled = True
+    Else
+        TextBox1.Enabled = False
+    End If
 End Sub
 
 Private Sub ComboBox1_Change()
