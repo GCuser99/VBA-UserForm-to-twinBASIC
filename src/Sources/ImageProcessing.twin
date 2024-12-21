@@ -40,12 +40,12 @@ Module ImageProcessing
     Private DeclareWide PtrSafe Function CryptBinaryToString Lib "crypt32" Alias "CryptBinaryToStringW" (pbBinary As Any, ByVal cbBinary As Long, ByVal dwFlags As CRYPT_STRING_OPTIONS, ByVal pszString As String, pcchString As Long) As BOOL
 
     'https://learn.microsoft.com/en-us/windows/win32/api/wincrypt/nf-wincrypt-cryptbinarytostringa
-    Public Enum CRYPT_STRING_OPTIONS
+    Private Enum CRYPT_STRING_OPTIONS
         CRYPT_STRING_BASE64 = &H00000001 'Base64, without headers.
         CRYPT_STRING_NOCRLF = &H40000000 'Do not append any new line characters to the encoded string.
     End Enum
 
-    Public Enum BOOL
+    Private Enum BOOL
         CFALSE
         CTRUE
     End Enum

@@ -3,7 +3,7 @@ A VBIDE add-in that converts VBA UserForms for use in [twinBASIC](https://twinba
 
 ***
 
-The [twinBASIC](https://twinbasic.com/preview.html) (in Beta) does not yet support VBA UserForms. It does however have its own excellent (VB6 compatible) native Form designer and associated controls. This simple VBIDE add-in for MS Office applications converts a UserForm, its controls, images, and code into a twinBASIC form that can be imported directly into twinBASIC. 
+The [twinBASIC](https://twinbasic.com/preview.html) (in Beta) does not yet support VBA UserForms. It does however have its own excellent VB6-compatible native Form designer and associated controls. This simple VBIDE add-in for MS Office applications converts a UserForm, its controls, images, and code into a twinBASIC form that can be imported directly into twinBASIC. 
 
 This tool, compiled in twinBASIC, queries the state of the UserForm and each of its child controls at design time and builds the closest twinBASIC equivalent. For non-MS Forms controls or MS Forms controls not supported (see below), a twinBASIC Label or Frame control is substituted to flag the missing control. UserForm code is translated and exported in a format that can be imported into twinBASIC, along with the form. 
 
@@ -54,6 +54,6 @@ The resulting imported form and code may have to be tweaked in twinBASIC to work
 
 - Wayne Phillips' [twinBASIC](https://twinbasic.com/preview.html) and Sample 4: MyVBEAddin
 - Tim Hall's [JsonConverter](https://github.com/VBA-tools/VBA-JSON/tree/master)
-- Krool's [VBCCR](https://github.com/Kr00l/VBCCR) twinBASIC package
+- Jon Johnson's [Windows Development Lib](https://github.com/fafalone/WinDevLib) twinBASIC package
 - R. Beltran's [ArrayList](https://github.com/Theadd/ArrayList) twinBASIC package
 - Jordan Russell's [Inno Setup](https://jrsoftware.org/isinfo.php) and Bill Stewart's [UninsIS](https://github.com/Bill-Stewart/UninsIS)

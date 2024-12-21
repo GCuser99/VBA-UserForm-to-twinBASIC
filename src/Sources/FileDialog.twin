@@ -1,0 +1,425 @@
+' ==========================================================================
+' FileDialog v1.0
+'
+' A class for selecting file system objects for use in twinBASIC.
+'
+'
+' Contact Info:
+'
+' https://github.com/GCUser99
+' ==========================================================================
+' MIT License
+'
+' Copyright (c) 2024, GCUser99 (https://github.com/GCUser99)
+'
+' Permission is hereby granted, free of charge, to any person obtaining a copy
+' of this software and associated documentation files (the "Software"), to deal
+' in the Software without restriction, including without limitation the rights
+' to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+' copies of the Software, and to permit persons to whom the Software is
+' furnished to do so, subject to the following conditions:
+'
+' The above copyright notice and this permission notice shall be included in all
+' copies or substantial portions of the Software.
+'
+' THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+' IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+' FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+' AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+' LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+' OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+' SOFTWARE.
+' ==========================================================================
+/*
+Typical Useage:
+
+Dim folderPicker As FileDialog
+'instatiate while specifying the type of dialog (required)
+Set folderPicker = New FileDialog(fdFileDialogFolderPicker) 
+
+'set some options
+folderPicker.InitialFolderPath = Environ("USERPROFILE") & "\Documents"
+folderPicker.Title = "Select the Folder to Use"
+folderPicker.OwnerWinHandle = MyForm.hWnd
+
+'show the modal FileDialog 
+If folderPicker.Show() Then
+    'user selected a folder so retrieve the path
+    folderPath = folderPicker.SelectedItems(1)
+Else
+    'user canceled
+    MsgBox "No file was selected!"
+    'unload the form
+    MyForm.Close
+    Set MyForm = Nothing
+    Exit Sub
+End If
+*/
+
+[COMCreatable(False)]
+Class FileDialog
+    'https://learn.microsoft.com/en-us/office/vba/api/overview/library-reference/filedialog-members-office
+    'https://learn.microsoft.com/en-us/windows/win32/api/shobjidl_core/ne-shobjidl_core-_fileopendialogoptions
+    'https://learn.microsoft.com/en-us/windows/win32/api/shobjidl_core/nn-shobjidl_core-ifiledialog
+    'This module requires a reference to Jon Johnson's Windows Development Library tB package
+    
+    Public Enum fdFileDialogType
+        fdOpen = 1
+        fdSaveAs = 2
+        fdFolderPicker = 3
+    End Enum
+    
+    Private Enum FILEOPENDIALOGOPTIONS
+        FOS_OVERWRITEPROMPT = &H00000002 ' When saving a file, prompt before overwriting an existing file of the same name. This is a default value for the Save dialog
+        FOS_STRICTFILETYPES = &H00000004 ' In the save dialog, only allow the user to choose a file that has one of the file extensions provided in SetFileTypes.
+        FOS_NOCHANGEDIR = &H00000008 ' Don't change the current working directory
+        FOS_PICKFOLDERS = &H00000020 ' Invoke the open dialog in folder picking mode.
+        FOS_FORCEFILESYSTEM = &H00000040 ' Ensure that items returned are filesystem items.
+        FOS_ALLNONSTORAGEITEMS = &H00000080 ' Allow choosing items that have no storage.
+        FOS_NOVALIDATE = &H00000100 'Do not check for situations that would prevent an application from opening the selected file, such as sharing violations or access denied errors.
+        FOS_ALLOWMULTISELECT = &H00000200 'Enables the user to select multiple items in the open dialog. Note that when this flag is set, the IFileOpenDialog interface must be used to retrieve those items.
+        FOS_PATHMUSTEXIST = &H00000800 ' The item returned must be in an existing folder. This is a default value.
+        FOS_FILEMUSTEXIST = &H00001000 'The item returned must exist.  (on by default in the open dialog and folder picker)
+        FOS_CREATEPROMPT = &H00002000 'Prompt for creation if the item returned in the open dialog does not exist. Note that this does not actually create the item.
+        FOS_SHAREAWARE = &H00004000 'In the case of a sharing violation when an application is opening a file, call the application back through OnShareViolation for guidance. This flag is overridden by FOS_NOVALIDATE.
+        FOS_NOREADONLYRETURN = &H00008000& ' Do not return read-only items. This is a default value for the Save dialog.
+        FOS_NOTESTFILECREATE = &H00010000 ' Do not test whether creation of the item as specified in the Save dialog will be successful. If this flag is not set, the calling application must handle errors, such as denial of access, discovered when the item is created.
+        FOS_HIDEMRUPLACES = &H00020000 'Hide the list of places from which the user has recently opened or saved items. This value is not supported as of Windows 7.
+        FOS_HIDEPINNEDPLACES = &H00040000 ' Don't display the standard namespace locations in the navigation pane. (generally used along with AddPlace)
+        FOS_NODEREFERENCELINKS = &H00100000 ' Don't treat shortcuts as their target files.
+        FOS_DONTADDTORECENT = &H02000000 ' Don't add the chosen file to the recent documents list (SHAddToRecentDocs)
+        FOS_FORCESHOWHIDDEN = &H10000000 ' Show all files including system and hidden files.
+        FOS_DEFAULTNOMINIMODE = &H20000000 'Indicates to the Save As dialog box that it should open in expanded mode. Expanded mode is the mode that is set and unset by clicking the button in the lower-left corner of the Save As dialog box that switches between Browse Folders and Hide Folders when clicked. This value is not supported as of Windows 7.
+        FOS_FORCEPREVIEWPANEON = &H40000000 'Indicates to the Open dialog box that the preview pane should always be displayed.
+        FOS_SUPPORTSTREAMABLEITEMS = &H80000000 ' Indicates the caller will use BHID_Stream to open contents, no need to download the file
+    End Enum
+    
+    Private mOwnerWinHandle As LongPtr
+    Private mInitialFolderPath As String
+    Private mFilterDescriptor As String
+    Private mFilterExtensions As String
+    Private mTitle As String
+    Private mButtonName As String
+    Private mAllowMultiSelect As Boolean
+    Private mInitialFileName As String
+    Private mDefaultExtension As String
+    Private mSelectedItems As Collection
+    Private mDialogType As fdFileDialogType
+    Private mInitialView As Long
+    Private mFileNameLabel As String
+    Private mShowHiddenFiles As Boolean
+    Private mPathMustExist As Boolean
+    
+    Sub New(ByVal val As fdFileDialogType)
+        mDialogType = val
+    End Sub
+    
+    [Description("The item returned must be in an existing folder. This is a default value. Read/write.")]
+    Public Property Let PathMustExist(ByVal val As Boolean)
+        mPathMustExist = val
+    End Property
+    Public Property Get PathMustExist() As Boolean
+        PathMustExist = mPathMustExist
+    End Property
+    
+    [Description("Sets the text of the label next to the file name edit box. Read/write.")]
+    Public Property Let FileNameLabel(ByVal val As String)
+        mFileNameLabel = val
+    End Property
+    Public Property Get FileNameLabel() As String
+        FileNameLabel = mFileNameLabel
+    End Property
+    
+    [Description("Gets an FileDialogType constant representing the type of file dialog box that the FileDialog object is set to display. Read-only.")]
+    Public Property Get DialogType() As fdFileDialogType
+        DialogType = mDialogType
+    End Property
+    
+    [Description("Displays a file dialog box and returns a Boolean indicating whether the user pressed the Action button (-1) or the Cancel button (0). When you call the Show method, no more code executes until the user dismisses the file dialog box. In the case of Open and SaveAs dialog boxes, use the Execute method right after the Show method to carry out the user's action.")]
+    Public Function Show() As Boolean
+        Select Case mDialogType
+            Case fdFolderPicker
+                Show = ShowFolderSelect()
+            Case fdOpen
+                Show = ShowFileOpen()
+            Case fdSaveAs
+                Show = ShowFileSave()
+        End Select
+    End Function
+    
+    [Description("Gets or sets the owner window handle - defaults to no owner window. Read/write.")]
+    Public Property Let OwnerWinHandle(ByVal val As LongPtr)
+        mOwnerWinHandle = val
+    End Property
+    Public Property Get OwnerWinHandle() As LongPtr
+        OwnerWinHandle = mOwnerWinHandle
+    End Property
+    
+    [Description("Sets the default extension to be added to file names. Read/write.")]
+    Public Property Let DefaultExtension(ByVal val As String)
+        mDefaultExtension = val
+    End Property
+    Public Property Get DefaultExtension() As String
+        DefaultExtension = mDefaultExtension
+    End Property
+    
+    [Description("Sets the folder used as a default if there is not a recently used folder value available. Read/write.")]
+    Public Property Let InitialFolderPath(ByVal val As String)
+        mInitialFolderPath = val
+    End Property
+    Public Property Get InitialFolderPath() As String
+        InitialFolderPath = mInitialFolderPath
+    End Property
+    
+    [Description("Sets or returns a String representing the path or file name that is initially displayed in a file dialog box. Read/write.")]
+    Public Property Let InitialFileName(ByVal val As String)
+        mInitialFileName = val
+    End Property
+    Public Property Get InitialFileName() As String
+        InitialFileName = mInitialFileName
+    End Property
+    
+    [Description("Is True if the user is allowed to select multiple files from a file dialog box. Read/write.")]
+    Public Property Let FilterDescriptor(ByVal val As String)
+        mFilterDescriptor = val
+    End Property
+    Public Property Get FilterDescriptor() As String
+        FilterDescriptor = mFilterDescriptor
+    End Property
+    
+    [Description("Is True if the user is allowed to select multiple files from a file dialog box. Read/write.")]
+    Public Property Let FilterExtensions(ByVal val As String)
+        'note that multiple extensions must be separated by semicolon eg: "*.pdf;*.jpg"     
+        mFilterExtensions = val
+    End Property
+    Public Property Get FilterExtensions() As String
+        FilterExtensions = mFilterExtensions
+    End Property
+    
+    [Description("Gets or sets the title of a file dialog box displayed by using the FileDialog object. Read/write.")]
+    Public Property Let Title(ByVal val As String)
+        mTitle = val
+    End Property
+    Public Property Get Title() As String
+        Title = mTitle
+    End Property
+    
+    [Description("Gets or sets a String representing the text that is displayed on the action button of a file dialog box. Read/write..")]
+    Public Property Let ButtonName(ByVal val As String)
+        mButtonName = val
+    End Property
+    Public Property Get ButtonName() As String
+        ButtonName = mButtonName
+    End Property
+    
+    [Description("Is True if the user is allowed to select multiple files from a file dialog box. Read/write.")]
+    Public Property Let AllowMultiSelect(ByVal val As Boolean)
+        mAllowMultiSelect = val
+    End Property
+    Public Property Get AllowMultiSelect() As Boolean
+        AllowMultiSelect = mAllowMultiSelect
+    End Property
+    
+    [Description("If True, Show all files including system and hidden files. Read/write.")]
+    Public Property Let ShowHiddenFiles(ByVal val As Boolean)
+        mShowHiddenFiles = val
+    End Property
+    Public Property Get ShowHiddenFiles() As Boolean
+        ShowHiddenFiles = mShowHiddenFiles
+    End Property
+    
+    [Description("Gets a Selected Items collection. This collection contains a list of the paths of the files that a user selected from a file dialog box displayed by using the Show method of the FileDialog object. Read-only..")]
+    Public Function SelectedItems() As Collection
+        Set SelectedItems = mSelectedItems
+    End Function
+    
+    Private Function ShowFolderSelect() As Boolean
+        Dim fsd As New FileOpenDialog
+        Dim siResult As IShellItem
+        Dim siaResult As IShellItemArray
+        Dim siDef As IShellItem
+        Dim lpPath As LongPtr, sPath As String
+        Dim options As Long
+        
+        If mTitle = vbNullString Then mTitle = "Select Folder"
+        fsd.SetTitle mTitle
+        
+        options = FOS_PICKFOLDERS
+        options = options Or FOS_PATHMUSTEXIST 'default value
+        If mAllowMultiSelect Then options = options Or FOS_ALLOWMULTISELECT
+        fsd.SetOptions options
+        
+        If mButtonName = vbNullString Then mButtonName = "Select Folder"
+        fsd.SetOkButtonLabel mButtonName
+        
+        If mFileNameLabel <> vbNullString Then fsd.SetFileNameLabel mFileNameLabel
+        
+        If mInitialFolderPath <> vbNullString Then
+            SHCreateItemFromParsingName StrPtr(mInitialFolderPath), Nothing, IID_IShellItem, siDef
+            fsd.SetFolder siDef
+        Else
+            SHGetKnownFolderItem FOLDERID_Documents, KF_FLAG_DEFAULT, 0, IID_IShellItem, siDef
+            fsd.SetDefaultFolder siDef
+        End If
+    
+        On Error Resume Next
+        fsd.Show mOwnerWinHandle
+        fsd.GetResults siaResult
+        On Error GoTo 0
+        
+        If siaResult IsNot Nothing Then
+            Dim pEnum As IEnumShellItems
+            Set mSelectedItems = New Collection
+            siaResult.EnumItems pEnum
+            Do While pEnum.Next(1, siResult) = S_OK
+                lpPath = 0: sPath = ""
+                siResult.GetDisplayName(SIGDN_FILESYSPATH, lpPath)
+                If lpPath Then
+                    sPath = LPWSTRtoStr(lpPath)
+                    mSelectedItems.Add sPath
+                End If
+                Set siResult = Nothing
+            Loop
+            If mSelectedItems.Count > 0 Then ShowFolderSelect = True
+        End If
+    End Function
+    
+    Private Function ShowFileOpen() As Boolean
+        Dim fod As New FileOpenDialog
+        Dim siResult As IShellItem
+        Dim siaResult As IShellItemArray
+        Dim siDef As IShellItem
+        Dim tFilt As COMDLG_FILTERSPEC
+        Dim lpPath As LongPtr, sPath As String
+        Dim options As Long
+        
+        If mFilterDescriptor = vbNullString Then mFilterDescriptor = "All Files"
+        tFilt.pszName = StrPtr(mFilterDescriptor)
+        If mFilterExtensions = vbNullString Then mFilterExtensions = "*.*"
+        tFilt.pszSpec = StrPtr(mFilterExtensions)
+        
+        If mTitle = vbNullString Then mTitle = "Open"
+        fod.SetTitle mTitle
+        fod.SetFileTypes 1, VarPtr(tFilt)
+        
+        If mPathMustExist Then options = FOS_FILEMUSTEXIST
+        If mAllowMultiSelect Then options = options Or FOS_ALLOWMULTISELECT
+        If mShowHiddenFiles Then options = options Or FOS_FORCESHOWHIDDEN
+        fod.SetOptions options
+        
+        If mButtonName = vbNullString Then mButtonName = "Open"
+        fod.SetOkButtonLabel mButtonName
+        
+        If mFileNameLabel <> vbNullString Then fod.SetFileNameLabel mFileNameLabel
+        
+        If mInitialFolderPath <> vbNullString Then
+            SHCreateItemFromParsingName StrPtr(mInitialFolderPath), Nothing, IID_IShellItem, siDef
+            fod.SetFolder siDef
+        Else
+            SHGetKnownFolderItem FOLDERID_Documents, KF_FLAG_DEFAULT, 0, IID_IShellItem, siDef
+            fod.SetDefaultFolder siDef
+        End If
+        
+        On Error Resume Next
+        fod.Show mOwnerWinHandle
+        fod.GetResults siaResult
+        On Error GoTo 0
+        
+        If siaResult IsNot Nothing Then
+            Dim pEnum As IEnumShellItems
+            Set mSelectedItems = New Collection
+            siaResult.EnumItems pEnum
+            Do While pEnum.Next(1, siResult) = S_OK
+                lpPath = 0: sPath = ""
+                siResult.GetDisplayName(SIGDN_FILESYSPATH, lpPath)
+                If lpPath Then
+                    sPath = LPWSTRtoStr(lpPath)
+                    mSelectedItems.Add sPath
+                End If
+                Set siResult = Nothing
+            Loop
+            If mSelectedItems.Count > 0 Then ShowFileOpen = True
+        End If
+    End Function
+    
+    Private Function ShowFileSave() As Boolean
+        Dim fsd As FileSaveDialog
+        Dim siResult As IShellItem
+        Dim tFilt As COMDLG_FILTERSPEC
+        Dim lpPath As LongPtr, sPath As String
+        Dim siDef As IShellItem
+        Dim options As Long
+        
+        If mFilterDescriptor = vbNullString Then mFilterDescriptor = "All Files"
+        tFilt.pszName = StrPtr(mFilterDescriptor)
+        If mFilterExtensions = vbNullString Then mFilterExtensions = "*.*"
+        tFilt.pszSpec = StrPtr(mFilterExtensions)
+        
+        Set fsd = New FileSaveDialog
+        
+        If mTitle = vbNullString Then mTitle = "Save As"
+        fsd.SetTitle mTitle
+        fsd.SetFileTypes 1, VarPtr(tFilt)
+        If mDefaultExtension <> vbNullString Then fsd.SetDefaultExtension mDefaultExtension
+        
+        options = FOS_OVERWRITEPROMPT 'default
+        options = options Or FOS_NOREADONLYRETURN 'default
+        options = options Or FOS_PATHMUSTEXIST 'default
+        If mShowHiddenFiles Then options = options Or FOS_FORCESHOWHIDDEN
+        fsd.SetOptions options
+        
+        If mButtonName = vbNullString Then mButtonName = "Save"
+        fsd.SetOkButtonLabel mButtonName
+        
+        If mFileNameLabel <> vbNullString Then fsd.SetFileNameLabel mFileNameLabel
+        
+        If mInitialFileName <> vbNullString Then fsd.SetFileName mInitialFileName
+        
+        If mInitialFolderPath <> vbNullString Then
+            SHCreateItemFromParsingName StrPtr(mInitialFolderPath), Nothing, IID_IShellItem, siDef
+            fsd.SetFolder siDef
+        Else
+            SHGetKnownFolderItem FOLDERID_Documents, KF_FLAG_DEFAULT, 0, IID_IShellItem, siDef
+            fsd.SetDefaultFolder siDef
+        End If
+
+        On Error Resume Next
+        fsd.Show mOwnerWinHandle
+        fsd.GetResult siResult
+        On Error GoTo 0
+        
+        If siResult IsNot Nothing Then
+            siResult.GetDisplayName(SIGDN_FILESYSPATH, lpPath)
+            If lpPath Then
+                sPath = LPWSTRtoStr(lpPath)
+                Set mSelectedItems = New Collection
+                mSelectedItems.Add sPath
+                'mSelectedFilePath = sPath
+                ShowFileSave = True
+            End If
+        End If
+    End Function
+    
+    Private Sub Class_Initialize()
+        If mDialogType = 0 Then Err.Raise 101, , "Dialog type not known - use:" & vbCrLf & "Set dialog = New FileDialog(fdFileDialogOpen)" & vbCrLf & "to instantiate the FileDialog object"
+        SetDefaults
+    End Sub
+    
+    Private Sub Class_Terminate()
+        Set mSelectedItems = Nothing
+    End Sub
+    
+    Private Sub SetDefaults()
+        mOwnerWinHandle = 0&
+        mInitialFolderPath = vbNullString
+        mFilterDescriptor = "All Files"
+        mFilterExtensions = "*.*"
+        mTitle = vbNullString
+        mButtonName = vbNullString
+        mAllowMultiSelect = False
+        mInitialFileName = vbNullString
+        mDefaultExtension = vbNullString
+        mShowHiddenFiles = False
+    End Sub
+    
+End Class

@@ -43,6 +43,7 @@ Attribute VB_Name = "JsonConverter"
 ' (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ' SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ' ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ '
+'    Changed the way numbers are converted to String in ConvertToJson to handle system decimal separators that are not "."
 Option Explicit
 
 ' === VBA-UTC Headers
@@ -447,7 +448,13 @@ Public Function ConvertToJson(ByVal JsonValue As Variant, Optional ByVal Whitesp
         ConvertToJson = json_BufferToString(json_Buffer, json_BufferPosition)
     Case VBA.vbInteger, VBA.vbLong, VBA.vbSingle, VBA.vbDouble, VBA.vbCurrency, VBA.vbDecimal
         ' Number (use decimals for numbers)
-        ConvertToJson = VBA.Replace(JsonValue, ",", ".")
+        ' Number (use decimals for numbers)
+        ' Changed by @6DiegoDiego9 and @GCuser99 to handle system decimal separators other than "," and "."
+        If DecimalSep() <> "." Then
+            ConvertToJson = VBA.Replace$(JsonValue, DecimalSep(), ".")
+        Else
+            ConvertToJson = VBA.CStr$(JsonValue)
+        End If
     Case Else
         ' vbEmpty, vbError, vbDataObject, vbByte, vbUserDefinedType
         ' Use VBA's built-in to-string
@@ -460,6 +467,11 @@ End Function
 ' ============================================= '
 ' Private Functions
 ' ============================================= '
+
+'https://www.vbforums.com/showthread.php?640664-RESOLVED-Decimal-separator
+Private Function DecimalSep() As String
+    DecimalSep = Format$(0, ".")
+End Function
 
 Private Function json_ParseObject(json_String As String, ByRef json_Index As Long) As Dictionary
     Dim json_Key As String

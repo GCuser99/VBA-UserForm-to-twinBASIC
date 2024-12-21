@@ -1,5 +1,5 @@
 ' ==========================================================================
-' tBUserFormConverter v2.8
+' tBUserFormConverter v2.9
 '
 ' A VBIDE add-in (complied with twinBASIC) that converts VBA UserForms for use in twinBASIC.
 '
@@ -148,7 +148,8 @@ Module FormProcessing
         Dim codelines As ArrayList
         Dim codeline As String
         Dim hideIconBox As Boolean
-        Dim saveImageResourcesToFile  As Boolean
+        Dim saveImageResourcesToFile As Boolean
+        Dim folderPicker As FileDialog
 
         'Initialize the form
         For Each vbc In activeVBProject.VBComponents
@@ -171,12 +172,10 @@ Module FormProcessing
         'browse for output folder path
         Dim filePath  As String
         Dim folderPath As String
-        Dim comdlg As New VBComDlg.CommonDialog
+
         Dim res As Boolean
         Dim activeVBProjectFileName As String
         Dim activeVBProjectFolderName As String
-        
-        comdlg.DialogTitle = "Select Output Folder to Save Forms:"
         
         'it's possible that user created a useform in a new unsaved document
         'in which case activeVBProject.FileName will fail
@@ -190,20 +189,24 @@ Module FormProcessing
         On Error GoTo 0
         
         On Error GoTo EH
+        
+        'get user-selected folder for saving converted dialogs
+        Set folderPicker = New FileDialog(fdFolderPicker)
+        folderPicker.InitialFolderPath = activeVBProjectFolderName
+        folderPicker.Title = "Select Folder to Save Forms To"
+        folderPicker.OwnerWinHandle = Converter.hWnd
 
-        comdlg.InitDir = activeVBProjectFolderName
-
-        res = comdlg.ShowFolderBrowser()
-        If Not res Then
+        If folderPicker.Show() Then
+            folderPath = folderPicker.SelectedItems(1)
+        Else
             MsgBox "No UserForms were converted.", , "Convert UserForm(s) to twinBASIC"
             'unload the form
             Converter.Close
             Set Converter = Nothing
             Exit Sub
         End If
-        folderPath = comdlg.FileName
         
-        'get other user-supplied parameters
+        'get user-supplied parameters
         useVBAFont = Converter.optUseVBAFonts.Value
         outputCode = (Converter.ckbOutputCode.Value = vbChecked)
         useVisualStyles = (Converter.ckbUseVisualStyles.Value = vbChecked)
@@ -290,7 +293,7 @@ Module FormProcessing
                 Case "SpinButton"
                     ProcessSpinButton ctl, tbControl, ptsToPixels, useVisualStyles
                 Case "ToggleButton"
-                    ProcessToggleButton ctl, tbControl, ptsToPixels, useVBAFont, useVisualStyles, use3DAppearance
+                    ProcessToggleButton ctl, tbControl, ptsToPixels, useVBAFont, useVisualStyles
                 Case Else 'Unsupported
                     ProcessUnsupported ctl, tbControl, ptsToPixels
                 End Select
@@ -340,9 +343,12 @@ Module FormProcessing
                         textBoxes.Add ctl.Name
                     End If
                 Next ctl
+                
+                Dim regEx As New RegExp
             
                 'map the events handlers that tb Form and UserForm have in common
                 For i = 1 To codelines.Count
+                    
                     'translate UserForm_QueryClose
                     If InStr(codelines(i), "Private Sub UserForm_QueryClose(Cancel As Integer, CloseMode As Integer)") Then
                         codelines(i) = Replace(codelines(i), "Private Sub UserForm_QueryClose(Cancel As Integer, CloseMode As Integer)", "Private Sub Form_QueryUnload(Cancel As Integer, UnloadMode As Integer)")
@@ -354,12 +360,47 @@ Module FormProcessing
                     End If
                     
                     'replace CheckBox Value property boolean assignments with vbChecked and vbUnchecked
+                    'handle if then statement
                     For j = 1 To checkBoxes.Count
-                        codelines(i) = Replace(codelines(i), checkBoxes(j) & ".Value = True", checkBoxes(j) & ".Value = vbChecked")
-                        codelines(i) = Replace(codelines(i), checkBoxes(j) & ".Value = False", checkBoxes(j) & ".Value = vbUnchecked")
                         codelines(i) = Replace(codelines(i), "If " & checkBoxes(j) & ".Value Then", "If " & checkBoxes(j) & ".Value = vbChecked Then")
+                        codelines(i) = Replace(codelines(i), "If " & checkBoxes(j) & ".Value = True Then", "If " & checkBoxes(j) & ".Value = vbChecked Then")
                         codelines(i) = Replace(codelines(i), "If Not " & checkBoxes(j) & ".Value Then", "If " & checkBoxes(j) & ".Value = vbUnchecked Then")
-                        codelines(i) = Replace(codelines(i), "= Not " & checkBoxes(j) & ".Value", "= IIf(" & checkBoxes(j) & ".Value = vbUnchecked, vbChecked, vbUnchecked)")
+                        codelines(i) = Replace(codelines(i), "If " & checkBoxes(j) & ".Value = False Then", "If " & checkBoxes(j) & ".Value = vbUnchecked Then")
+                    Next j
+                    
+                    'what about If checkbox.Value and something then??
+    
+                    'handle RHS assignment statement
+                    For j = 1 To checkBoxes.Count
+                        codelines(i) = Replace(codelines(i), "= (" & checkBoxes(j) & ".Value = True)", "= (" & checkBoxes(j) & ".Value = vbChecked)")
+                        codelines(i) = Replace(codelines(i), "= Not (" & checkBoxes(j) & ".Value = True)", "= (" & checkBoxes(j) & ".Value = vbUnChecked)")
+                        codelines(i) = Replace(codelines(i), "= (Not " & checkBoxes(j) & ".Value = True)", "= (" & checkBoxes(j) & ".Value = vbUnChecked)")
+                        codelines(i) = Replace(codelines(i), "= (" & checkBoxes(j) & ".Value = False)", "= (" & checkBoxes(j) & ".Value = vbUnChecked)")
+                        codelines(i) = Replace(codelines(i), "= " & checkBoxes(j) & ".Value", "= (" & checkBoxes(j) & ".Value = vbChecked)")
+                        codelines(i) = Replace(codelines(i), "= Not " & checkBoxes(j) & ".Value", "= (" & checkBoxes(j) & ".Value = vbUnChecked)")
+                    Next j
+                    
+                    'what about = (something and checkbox.Value)??
+                    'seems like we should replace checkbox.Value or checkbox.Value = True on RHS to (checkbox.Value = vbChecked)
+                    'seems like we should replace Not checkbox.Value or checkbox.Value = False on RHS to (checkbox.Value = vbUnchecked)
+                    'same for If Then
+                    
+                    'LHS and RHS can be determined by splitting on the first = from the left
+                    'process RHS first
+                    'what about ElseIf?
+                    
+                    'handle assignment statement
+                    For j = 1 To checkBoxes.Count
+                        regEx.Pattern = "^\s*" & checkBoxes(j) & "\.Value\s=\s(True|False)"
+                        If Not regEx.Test(codelines(i)) Then
+                            'handle logical boolean assignment
+                            regEx.Pattern = "(^\s*" & checkBoxes(j) & "\.Value\s=\s)(.+)"
+                            codelines(i) = regEx.Replace(codelines(i), "$1IIf($2, vbChecked, vbUnChecked)")
+                        Else
+                            'handle direct (True/False) boolean assignment
+                            codelines(i) = Replace(codelines(i), checkBoxes(j) & ".Value = True", checkBoxes(j) & ".Value = vbChecked")
+                            codelines(i) = Replace(codelines(i), checkBoxes(j) & ".Value = False", checkBoxes(j) & ".Value = vbUnchecked")
+                        End If
                     Next j
                     
                     'replace TextBox Value property with Text property
@@ -430,6 +471,7 @@ Module FormProcessing
         Dim dialogNames As New Collection
         Dim idlg As Long
         Dim imageCount As Long
+        Dim folderPicker As FileDialog
 
         'Initialize the form
         For Each vbc In activeVBProject.VBComponents
@@ -452,12 +494,9 @@ Module FormProcessing
         'browse for output folder path
         Dim filePath  As String
         Dim folderPath As String
-        Dim comdlg As New VBComDlg.CommonDialog
         Dim res As Boolean
         Dim activeVBProjectFileName As String
         Dim activeVBProjectFolderName As String
-        
-        comdlg.DialogTitle = "Select Output Folder to Save Resources:"
         
         'it's possible that user created a useform in a new unsaved document
         'in which case activeVBProject.FileName will fail
@@ -472,17 +511,21 @@ Module FormProcessing
         
         On Error GoTo EH
 
-        comdlg.InitDir = activeVBProjectFolderName
+        'get user-selected folder for saving extracted images
+        Set folderPicker = New FileDialog(fdFolderPicker)
+        folderPicker.InitialFolderPath = activeVBProjectFolderName
+        folderPicker.Title = "Select Folder to Save Resources To"
+        folderPicker.OwnerWinHandle = Extractor.hWnd
 
-        res = comdlg.ShowFolderBrowser()
-        If Not res Then
+        If folderPicker.Show() Then
+            folderPath = folderPicker.SelectedItems(1)
+        Else
             MsgBox "No UserForms were processed.", , "Extract UserForm Image Resources"
             'unload the form
             Extractor.Close
             Set Extractor = Nothing
             Exit Sub
         End If
-        folderPath = comdlg.FileName
         
         'unload the form
         Extractor.Close
@@ -664,18 +707,15 @@ Module FormProcessing
         tbControl.Item("Tag") = ctl.Tag
         tbControl.Item("MousePointer") = GetMousePointerString(ctl.MousePointer)
         
-        If ctl.MouseIcon <> 0 Then
-            tbControl.Item("MouseIcon") = GetImageString(ctl.MouseIcon)
-        End If
+        If ctl.MouseIcon <> 0 Then tbControl.Item("MouseIcon") = GetImageString(ctl.MouseIcon)
 
         If TypeName(ctl.Parent) = "Frame" Then
             'tB is from top left corner of frame, vba references from the inside
             tbControl.Item("Top") = (ctl.Top + 5) * ptsToPixels
-            'tBControl.Item("Top") = ctl.Top * ptsToPixels + 7
         End If
 
         If useVBAFont Then SetFontProperties tbControl, ctl
-        tbControl.Item("BorderColor") = ctl.BorderColor
+        
         tbControl.Item("BackColor") = ctl.BackColor
         tbControl.Item("ForeColor") = ctl.ForeColor
         tbControl.Item("Caption") = ctl.Caption
@@ -683,12 +723,36 @@ Module FormProcessing
         
         If ctl.BackStyle = fmBackStyleTransparent Then tbControl.Item("BackStyle") = "vbBFTransparent"
         
+        'in vba when border style single is on - specialeffect is auto set to flat
+        'if any other special effect is set, border style is set to none (because a border already exists)
+        'BorderColor only applies special effect flat/single border, but it can be set to any color
+        'in tB we must have custom border to change color
         If ctl.SpecialEffect = fmSpecialEffectFlat Then
-            tbControl.Item("BorderStyle") = IIf(ctl.BorderStyle = fmBorderStyleNone, "vbNoBorder", "vbFixedSingleBorder")
+            'if flat and border style none then no border, else fixed single border
+            If ctl.BorderStyle = fmBorderStyleNone Then
+                tbControl.Item("BorderStyle") = "vbNoBorder"
+            Else
+                tbControl.Item("BorderStyle") = "vbCustomBorder"
+                tbControl.Item("BorderCustomOptions").Item("Bottom").Item("Color") = ctl.BorderColor
+                tbControl.Item("BorderCustomOptions").Item("Bottom").Item("Padding") = 0
+                tbControl.Item("BorderCustomOptions").Item("Bottom").Item("Size") = 1
+                tbControl.Item("BorderCustomOptions").Item("Top").Item("Color") = ctl.BorderColor
+                tbControl.Item("BorderCustomOptions").Item("Top").Item("Padding") = 0
+                tbControl.Item("BorderCustomOptions").Item("Top").Item("Size") = 1
+                tbControl.Item("BorderCustomOptions").Item("Left").Item("Color") = ctl.BorderColor
+                tbControl.Item("BorderCustomOptions").Item("Left").Item("Padding") = 0
+                tbControl.Item("BorderCustomOptions").Item("Left").Item("Size") = 1
+                tbControl.Item("BorderCustomOptions").Item("Right").Item("Color") = ctl.BorderColor
+                tbControl.Item("BorderCustomOptions").Item("Right").Item("Padding") = 0
+                tbControl.Item("BorderCustomOptions").Item("Right").Item("Size") = 1
+            End If
+            tbControl.Item("Appearance") = "vbAppearFlat"
         Else
+            'any other special effect needs fixed single border
             tbControl.Item("BorderStyle") = "vbFixedSingleBorder"
+            If use3DAppearance Then tbControl.Item("Appearance") = "vbAppear3d" Else tbControl.Item("Appearance") = "vbAppearFlat"
         End If
-
+        
         'tbControl.Item("HelpContextID") = ctl.HelpContextID
         tbControl.Item("ToolTipText") = ctl.ControlTipText
         tbControl.Item("WordWrap") = ctl.WordWrap
@@ -702,7 +766,6 @@ Module FormProcessing
             tbControl.Item("Alignment") = "vbRightJustify"
         End Select
         tbControl.Item("ToolTipText") = ctl.ControlTipText
-        If use3DAppearance Then tbControl.Item("Appearance") = vbAppear3d Else tbControl.Item("Appearance") = vbAppearFlat
     End Sub
 
     Private Sub ProcessCommandButton(ctl As Object, tbControl As Dictionary, ByVal ptsToPixels As Double, ByVal useVBAFont As Boolean, ByVal useVisualStyles As Boolean, ByVal use3DAppearance As Boolean)
@@ -726,9 +789,7 @@ Module FormProcessing
         tbControl.Item("Tag") = ctl.Tag
         tbControl.Item("MousePointer") = GetMousePointerString(ctl.MousePointer)
         
-        If ctl.MouseIcon <> 0 Then
-            tbControl.Item("MouseIcon") = GetImageString(ctl.MouseIcon)
-        End If
+        If ctl.MouseIcon <> 0 Then tbControl.Item("MouseIcon") = GetImageString(ctl.MouseIcon)
             
         tbControl.Item("ToolTipText") = ctl.ControlTipText
         If useVBAFont Then SetFontProperties tbControl, ctl
@@ -744,6 +805,7 @@ Module FormProcessing
         'tbControl.Item("Cancel") = ctl.Cancel
         'tbControl.Item("HelpContextID") = ctl.HelpContextID
         tbControl.Item("VisualStyles") = useVisualStyles
+        'UserForm's command button is always 3D
         If use3DAppearance Then tbControl.Item("Appearance") = vbAppear3d Else tbControl.Item("Appearance") = vbAppearFlat
         If ctl.Picture.type <> 0 Then
             tbControl.Item("Picture") = GetImageString(ctl.Picture)
@@ -772,9 +834,7 @@ Module FormProcessing
         tbControl.Item("Tag") = ctl.Tag
         tbControl.Item("MousePointer") = GetMousePointerString(ctl.MousePointer)
         
-        If ctl.MouseIcon <> 0 Then
-            tbControl.Item("MouseIcon") = GetImageString(ctl.MouseIcon)
-        End If
+        If ctl.MouseIcon <> 0 Then tbControl.Item("MouseIcon") = GetImageString(ctl.MouseIcon)
 
         'tbControl.Item("HelpContextID") = ctl.HelpContextID
         tbControl.Item("ToolTipText") = ctl.ControlTipText
@@ -819,7 +879,7 @@ Module FormProcessing
         End If
         
         tbControl.Item("VisualStyles") = useVisualStyles
-        If use3DAppearance Then tbControl.Item("Appearance") = vbAppear3d Else tbControl.Item("Appearance") = vbAppearFlat
+        If use3DAppearance And ctl.SpecialEffect <> fmSpecialEffectFlat Then tbControl.Item("Appearance") = "vbAppear3d" Else tbControl.Item("Appearance") = "vbAppearFlat"
     End Sub
 
     Private Sub ProcessFrame(ctl As Object, tbControl As Dictionary, ByVal ptsToPixels As Double, ByVal useVBAFont As Boolean, ByVal useVisualStyles As Boolean, ByVal use3DAppearance As Boolean)
@@ -843,9 +903,7 @@ Module FormProcessing
         tbControl.Item("Tag") = ctl.Tag
         tbControl.Item("MousePointer") = GetMousePointerString(ctl.MousePointer)
         
-        If ctl.MouseIcon <> 0 Then
-            tbControl.Item("MouseIcon") = GetImageString(ctl.MouseIcon)
-        End If
+        If ctl.MouseIcon <> 0 Then tbControl.Item("MouseIcon") = GetImageString(ctl.MouseIcon)
 
         'tbControl.Item("HelpContextID") = ctl.HelpContextID
         tbControl.Item("ToolTipText") = ctl.ControlTipText
@@ -865,7 +923,7 @@ Module FormProcessing
 
         tbControl.Item("Caption") = ctl.Caption
         tbControl.Item("VisualStyles") = useVisualStyles
-        If use3DAppearance Then tbControl.Item("Appearance") = vbAppear3d Else tbControl.Item("Appearance") = vbAppearFlat
+        If use3DAppearance And ctl.SpecialEffect <> fmSpecialEffectFlat Then tbControl.Item("Appearance") = "vbAppear3d" Else tbControl.Item("Appearance") = "vbAppearFlat"
     End Sub
 
     Private Sub ProcessCheckBox(ctl As Object, tbControl As Dictionary, ByVal ptsToPixels As Double, ByVal useVBAFont As Boolean, ByVal useVisualStyles As Boolean, ByVal use3DAppearance As Boolean)
@@ -890,9 +948,7 @@ Module FormProcessing
         tbControl.Item("Tag") = ctl.Tag
         tbControl.Item("MousePointer") = GetMousePointerString(ctl.MousePointer)
         
-        If ctl.MouseIcon <> 0 Then
-            tbControl.Item("MouseIcon") = GetImageString(ctl.MouseIcon)
-        End If
+        If ctl.MouseIcon <> 0 Then tbControl.Item("MouseIcon") = GetImageString(ctl.MouseIcon)
 
         'tbControl.Item("HelpContextID") = ctl.HelpContextID
         tbControl.Item("ToolTipText") = ctl.ControlTipText
@@ -915,7 +971,9 @@ Module FormProcessing
             tbControl.Item("Alignment") = "tbRightJustify"
         End Select
         tbControl.Item("VisualStyles") = useVisualStyles
-        If use3DAppearance Then tbControl.Item("Appearance") = vbAppear3d Else tbControl.Item("Appearance") = vbAppearFlat
+        
+        If use3DAppearance And ctl.SpecialEffect <> fmSpecialEffectFlat Then tbControl.Item("Appearance") = "vbAppear3d" Else tbControl.Item("Appearance") = "vbAppearFlat"
+        
         If ctl.Picture.type <> 0 Then
             tbControl.Item("Picture") = GetImageString(ctl.Picture)
             tbControl.Item("Style") = "vbButtonGraphical"
@@ -944,9 +1002,7 @@ Module FormProcessing
         tbControl.Item("Tag") = ctl.Tag
         tbControl.Item("MousePointer") = GetMousePointerString(ctl.MousePointer)
         
-        If ctl.MouseIcon <> 0 Then
-            tbControl.Item("MouseIcon") = GetImageString(ctl.MouseIcon)
-        End If
+        If ctl.MouseIcon <> 0 Then tbControl.Item("MouseIcon") = GetImageString(ctl.MouseIcon)
 
         'tbControl.Item("HelpContextID") = ctl.HelpContextID
         tbControl.Item("ToolTipText") = ctl.ControlTipText
@@ -974,7 +1030,7 @@ Module FormProcessing
 
         tbControl.Item("Text") = ctl.Text
         tbControl.Item("VisualStyles") = useVisualStyles
-        If use3DAppearance Then tbControl.Item("Appearance") = vbAppear3d Else tbControl.Item("Appearance") = vbAppearFlat
+        If use3DAppearance And ctl.SpecialEffect <> fmSpecialEffectFlat Then tbControl.Item("Appearance") = "vbAppear3d" Else tbControl.Item("Appearance") = "vbAppearFlat"
     End Sub
 
     Private Sub ProcessListBox(ctl As Object, tbControl As Dictionary, ByVal ptsToPixels As Double, ByVal useVBAFont As Boolean, ByVal useVisualStyles As Boolean, ByVal use3DAppearance As Boolean)
@@ -999,9 +1055,7 @@ Module FormProcessing
         tbControl.Item("Tag") = ctl.Tag
         tbControl.Item("MousePointer") = GetMousePointerString(ctl.MousePointer)
         
-        If ctl.MouseIcon <> 0 Then
-            tbControl.Item("MouseIcon") = GetImageString(ctl.MouseIcon)
-        End If
+        If ctl.MouseIcon <> 0 Then tbControl.Item("MouseIcon") = GetImageString(ctl.MouseIcon)
 
         'tbControl.Item("HelpContextID") = ctl.HelpContextID
         tbControl.Item("ToolTipText") = ctl.ControlTipText
@@ -1035,9 +1089,9 @@ Module FormProcessing
         End If
         
         tbControl.Item("IntegralHeight") = ctl.IntegralHeight
-        tbControl.Item("Columns") = ctl.ColumnCount - 1 '?
+        tbControl.Item("Columns") = ctl.ColumnCount - 1
         tbControl.Item("VisualStyles") = useVisualStyles
-        If use3DAppearance Then tbControl.Item("Appearance") = vbAppear3d Else tbControl.Item("Appearance") = vbAppearFlat
+        If use3DAppearance And ctl.SpecialEffect <> fmSpecialEffectFlat Then tbControl.Item("Appearance") = "vbAppear3d" Else tbControl.Item("Appearance") = "vbAppearFlat"
     End Sub
 
     Private Sub ProcessOptionButton(ctl As Object, tbControl As Dictionary, ByVal ptsToPixels As Double, ByVal useVBAFont As Boolean, ByVal useVisualStyles As Boolean, ByVal use3DAppearance As Boolean)
@@ -1062,9 +1116,7 @@ Module FormProcessing
         tbControl.Item("Tag") = ctl.Tag
         tbControl.Item("MousePointer") = GetMousePointerString(ctl.MousePointer)
         
-        If ctl.MouseIcon <> 0 Then
-            tbControl.Item("MouseIcon") = GetImageString(ctl.MouseIcon)
-        End If
+        If ctl.MouseIcon <> 0 Then tbControl.Item("MouseIcon") = GetImageString(ctl.MouseIcon)
 
         'tbControl.Item("HelpContextID") = ctl.HelpContextID
         tbControl.Item("ToolTipText") = ctl.ControlTipText
@@ -1088,7 +1140,7 @@ Module FormProcessing
         End Select
         
         tbControl.Item("VisualStyles") = useVisualStyles
-        If use3DAppearance Then tbControl.Item("Appearance") = vbAppear3d Else tbControl.Item("Appearance") = vbAppearFlat
+        If use3DAppearance And ctl.SpecialEffect <> fmSpecialEffectFlat Then tbControl.Item("Appearance") = "vbAppear3d" Else tbControl.Item("Appearance") = "vbAppearFlat"
         
         If ctl.Picture.type <> 0 Then
             tbControl.Item("Picture") = GetImageString(ctl.Picture)
@@ -1120,18 +1172,17 @@ Module FormProcessing
         tbControl.Item("Tag") = ctl.Tag
         tbControl.Item("MousePointer") = GetMousePointerString(ctl.MousePointer)
         
-        If ctl.MouseIcon <> 0 Then
-            tbControl.Item("MouseIcon") = GetImageString(ctl.MouseIcon)
-        End If
+        If ctl.MouseIcon <> 0 Then tbControl.Item("MouseIcon") = GetImageString(ctl.MouseIcon)
         
         tbControl.Item("ToolTipText") = ctl.ControlTipText
 
         tbControl.Item("BackColor") = ctl.BackColor
         tbControl.Item("Name") = ctl.Name
-        tbControl.Item("Appearance") = IIf(ctl.SpecialEffect = 0, "vbAppearFlat", "vbAppear3D") 'all controls except for scrollbars
+        
+        If use3DAppearance And ctl.SpecialEffect <> fmSpecialEffectFlat Then tbControl.Item("Appearance") = "vbAppear3d" Else tbControl.Item("Appearance") = "vbAppearFlat"
+        
         'UserForm's Image has BackStyle, yet tB's does not (v544)
         'If ctl.BackStyle = fmBackStyleTransparent Then tbControl.Item("Opacity") = 0
-        'If use3DAppearance Then tbControl.Item("Appearance") = vbAppear3d Else tbControl.Item("Appearance") = vbAppearFlat
 
         If ctl.Picture IsNot Nothing Then
             tbControl.Item("Picture") = GetImageString(ctl.Picture)
@@ -1161,9 +1212,7 @@ Module FormProcessing
         tbControl.Item("Tag") = ctl.Tag
         tbControl.Item("MousePointer") = GetMousePointerString(ctl.MousePointer)
         
-        If ctl.MouseIcon <> 0 Then
-            tbControl.Item("MouseIcon") = GetImageString(ctl.MouseIcon)
-        End If
+        If ctl.MouseIcon <> 0 Then tbControl.Item("MouseIcon") = GetImageString(ctl.MouseIcon)
 
         'tbControl.Item("HelpContextID") = ctl.HelpContextID
         'tbControl.Item("ToolTipText") = ctl.ControlTipText
@@ -1211,9 +1260,7 @@ Module FormProcessing
         tbControl.Item("Tag") = ctl.Tag
         tbControl.Item("MousePointer") = GetMousePointerString(ctl.MousePointer)
         
-        If ctl.MouseIcon <> 0 Then
-            tbControl.Item("MouseIcon") = GetImageString(ctl.MouseIcon)
-        End If
+        If ctl.MouseIcon <> 0 Then tbControl.Item("MouseIcon") = GetImageString(ctl.MouseIcon)
 
         'tbControl.Item("HelpContextID") = ctl.HelpContextID
         'tbControl.Item("ToolTipText") = ctl.ControlTipText
@@ -1238,9 +1285,57 @@ Module FormProcessing
         tbControl.Item("VisualStyles") = useVisualStyles
     End Sub
 
-    Private Sub ProcessToggleButton(ctl As Object, tbControl As Dictionary, ByVal ptsToPixels As Double, ByVal useVBAFont As Boolean, ByVal useVisualStyles As Boolean, ByVal use3DAppearance As Boolean)
-        ProcessCheckBox ctl, tbControl, ptsToPixels, useVBAFont, useVisualStyles, use3DAppearance
-        tbControl.Item("Style") = "vbButtonGraphical" 'this is what makes a CheckBox into a ToggleButton
+    Private Sub ProcessToggleButton(ctl As Object, tbControl As Dictionary, ByVal ptsToPixels As Double, ByVal useVBAFont As Boolean, ByVal useVisualStyles As Boolean)
+        tbControl.Item("Name") = ctl.Name
+        tbControl.Item("Height") = ctl.Height * ptsToPixels
+        tbControl.Item("Width") = ctl.Width * ptsToPixels
+        tbControl.Item("Left") = ctl.Left * ptsToPixels
+        tbControl.Item("Top") = ctl.Top * ptsToPixels
+        
+        Select Case TypeName(ctl.Parent)
+        Case "Frame"
+            'tB is from top left corner of frame, vba references from the inside
+            tbControl.Item("Top") = (ctl.Top + 5) * ptsToPixels
+        Case "Page"
+            tbControl.Item("Top") = (ctl.Top + 15) * ptsToPixels
+        Case Else
+            tbControl.Item("Top") = ctl.Top * ptsToPixels
+        End Select
+
+        tbControl.Item("Enabled") = ctl.Enabled
+        tbControl.Item("Visible") = ctl.Visible
+        tbControl.Item("Tag") = ctl.Tag
+        tbControl.Item("MousePointer") = GetMousePointerString(ctl.MousePointer)
+        
+        If ctl.MouseIcon <> 0 Then tbControl.Item("MouseIcon") = GetImageString(ctl.MouseIcon)
+
+        'tbControl.Item("HelpContextID") = ctl.HelpContextID
+        tbControl.Item("ToolTipText") = ctl.ControlTipText
+
+        If useVBAFont Then SetFontProperties tbControl, ctl
+        tbControl.Item("BackColor") = ctl.BackColor
+        tbControl.Item("ForeColor") = ctl.ForeColor
+        tbControl.Item("Caption") = ctl.Caption
+        tbControl.Item("Value") = IIf(ctl.Value, "vbChecked", "vbUnchecked")
+        tbControl.Item("TabIndex") = ctl.TabIndex
+        tbControl.Item("TabStop") = ctl.TabStop
+        If ctl.BackStyle = fmBackStyleTransparent Then tbControl.Item("Opacity") = 0
+        
+        Select Case ctl.TextAlign
+        Case fmTextAlignCenter
+            'tbControl.Item("Alignment") = "tbCenter" 'tb CheckBox does not allow tbCenter
+        Case fmTextAlignLeft
+            tbControl.Item("Alignment") = "tbLeftJustify"
+        Case fmTextAlignRight
+            tbControl.Item("Alignment") = "tbRightJustify"
+        End Select
+        tbControl.Item("VisualStyles") = useVisualStyles
+        
+        If ctl.Picture.type <> 0 Then
+            tbControl.Item("Picture") = GetImageString(ctl.Picture)
+            tbControl.Item("Style") = "vbButtonGraphical"
+        End If
+        tbControl.Item("Style") = "vbButtonGraphical" 'this makes a CheckBox into a ToggleButton
     End Sub
 
     Private Sub ProcessUnsupported(ctl As Object, tbControl As Dictionary, ByVal ptsToPixels As Double)
@@ -1305,16 +1400,14 @@ Module FormProcessing
 
         tbControl.Item("MousePointer") = GetMousePointerString(frm.MousePointer)
         
-        If frm.MouseIcon <> 0 Then
-            tbControl.Item("MouseIcon") = GetImageString(frm.MouseIcon)
-        End If
+        If frm.MouseIcon <> 0 Then tbControl.Item("MouseIcon") = GetImageString(frm.MouseIcon)
 
         tbControl.Item("FormDesignerId") = "{" & guid & "}"
 
         'UserForms don't have a min and max buttons
         tbControl.Item("MaxButton") = False
         tbControl.Item("MinButton") = False
-        If Use3DAppearance Then tbControl.Item("Appearance") = vbAppear3d Else tbControl.Item("Appearance") = vbAppearFlat
+        If Use3DAppearance And frm.SpecialEffect <> fmSpecialEffectFlat Then tbControl.Item("Appearance") = "vbAppear3d" Else tbControl.Item("Appearance") = "vbAppearFlat"
         If frm.Picture IsNot Nothing Then tbControl.Item("Picture") = GetImageString(frm.Picture)
         'UserForms do not have an Icon box on the title bar...
         If hideIconBox Then tbControl.Item("Icon") = GetTransparentIconString()
@@ -1385,5 +1478,5 @@ Module FormProcessing
             GetPictureFileExtension = ".emf"
         End Select
     End Function
-
+    
 End Module

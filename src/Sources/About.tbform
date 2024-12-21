@@ -27,7 +27,6 @@
 		"Height": 152,
 		"HelpContextID": 0,
 		"Icon": "",
-		"Index": -1,
 		"KeyPreview": false,
 		"Left": 0,
 		"LinkMode": "vbLinkNone",
@@ -77,7 +76,7 @@
 			"showGrid": true,
 			"showOutlines": false
 		},
-		"__lastUpdateMarker": 621404605,
+		"__lastUpdateMarker": 2724409468,
 		"_children": [
 			{
 				"Alignment": "vbLeftJustify",
@@ -89,13 +88,37 @@
 					"_className": "Anchors",
 					"_clsid": "{8524D4B5-72A9-40A9-A189-29E7905C40CA}"
 				},
+				"Angle": 0,
 				"Appearance": "vbAppear3d",
 				"AutoSize": false,
 				"BackColor": -2147483633,
 				"BackStyle": "vbBFOpaque",
+				"BorderCustomOptions": {
+					"Bottom": {
+						"Color": 0,
+						"Padding": 0,
+						"Size": 0
+					},
+					"Left": {
+						"Color": 0,
+						"Padding": 0,
+						"Size": 0
+					},
+					"Right": {
+						"Color": 0,
+						"Padding": 0,
+						"Size": 0
+					},
+					"Top": {
+						"Color": 0,
+						"Padding": 0,
+						"Size": 0
+					}
+				},
 				"BorderStyle": "vbNoBorder",
 				"Caption": "Info Label",
 				"DataField": null,
+				"DataFieldAggregate": "vbAggregateNone",
 				"DataFormat": null,
 				"DataMember": null,
 				"DataSource": null,
@@ -112,7 +135,9 @@
 				"ForeColor": -2147483630,
 				"Height": 68,
 				"Index": -1,
-				"Left": 13,
+				"InternalSectionId": -1,
+				"Left": 14,
+				"LineSpacing": 0,
 				"LinkItem": null,
 				"LinkMode": "vbLinkNone",
 				"LinkTimeout": 50,
@@ -125,8 +150,9 @@
 				"TabIndex": 1,
 				"Tag": null,
 				"ToolTipText": null,
-				"Top": 18,
+				"Top": 17,
 				"UseMnemonic": true,
+				"VerticalAlignment": "vbVerticalAlignTop",
 				"Visible": true,
 				"WhatsThisHelpID": 0,
 				"Width": 273,
@@ -190,8 +216,11 @@
 				"VisualStyles": true,
 				"WhatsThisHelpID": 0,
 				"Width": 89,
+				"_Default": false,
 				"_className": "CommandButton",
-				"_clsid": "{33AD4EF0-6699-11CF-B70C-00AA0060D393}"
+				"_clsid": "{33AD4EF0-6699-11CF-B70C-00AA0060D393}",
+				"_hasExclusiveCancelProp": true,
+				"_hasExclusiveDefaultProp": true
 			},
 			{
 				"Alignment": "vbLeftJustify",
@@ -203,13 +232,37 @@
 					"_className": "Anchors",
 					"_clsid": "{8524D4B5-72A9-40A9-A189-29E7905C40CA}"
 				},
+				"Angle": 0,
 				"Appearance": "vbAppear3d",
 				"AutoSize": false,
 				"BackColor": -2147483633,
 				"BackStyle": "vbBFOpaque",
+				"BorderCustomOptions": {
+					"Bottom": {
+						"Color": 0,
+						"Padding": 0,
+						"Size": 0
+					},
+					"Left": {
+						"Color": 0,
+						"Padding": 0,
+						"Size": 0
+					},
+					"Right": {
+						"Color": 0,
+						"Padding": 0,
+						"Size": 0
+					},
+					"Top": {
+						"Color": 0,
+						"Padding": 0,
+						"Size": 0
+					}
+				},
 				"BorderStyle": "vbNoBorder",
 				"Caption": "Website Label",
 				"DataField": null,
+				"DataFieldAggregate": "vbAggregateNone",
 				"DataFormat": null,
 				"DataMember": null,
 				"DataSource": null,
@@ -226,7 +279,9 @@
 				"ForeColor": -2147483630,
 				"Height": 18,
 				"Index": -1,
+				"InternalSectionId": -1,
 				"Left": 14,
+				"LineSpacing": 0,
 				"LinkItem": null,
 				"LinkMode": "vbLinkNone",
 				"LinkTimeout": 50,
@@ -241,12 +296,56 @@
 				"ToolTipText": null,
 				"Top": 92,
 				"UseMnemonic": true,
+				"VerticalAlignment": "vbVerticalAlignTop",
 				"Visible": true,
 				"WhatsThisHelpID": 0,
 				"Width": 287,
 				"WordWrap": false,
 				"_className": "Label",
 				"_clsid": "{33AD4ED8-6699-11CF-B70C-00AA0060D393}",
+				"_paintedByParent": true
+			},
+			{
+				"Anchors": {
+					"Bottom": false,
+					"Left": true,
+					"Right": false,
+					"Top": true,
+					"_className": "Anchors",
+					"_clsid": "{8524D4B5-72A9-40A9-A189-29E7905C40CA}"
+				},
+				"Angle": 0,
+				"Appearance": "vbAppear3d",
+				"BorderStyle": "vbNoBorder",
+				"DataField": null,
+				"DataFormat": null,
+				"DataMember": null,
+				"DataSource": null,
+				"Dock": "vbDockNone",
+				"DragIcon": "",
+				"DragMode": "vbManual",
+				"Enabled": true,
+				"Height": 26,
+				"Index": -1,
+				"InternalSectionId": -1,
+				"Left": 25,
+				"MouseIcon": "",
+				"MousePointer": "vbDefault",
+				"Name": "Image1",
+				"OLEDragMode": "vbOLEDragManual",
+				"OLEDropMode": "vbOLEDropNone",
+				"Picture": "",
+				"PictureDpiScaling": true,
+				"Stretch": false,
+				"StretchMode": "vbStretchHalftone",
+				"Tag": null,
+				"ToolTipText": null,
+				"Top": 116,
+				"Visible": true,
+				"WhatsThisHelpID": 0,
+				"Width": 39,
+				"_className": "Image",
+				"_clsid": "{33AD4F90-6699-11CF-B70C-00AA0060D393}",
 				"_paintedByParent": true
 			}
 		],

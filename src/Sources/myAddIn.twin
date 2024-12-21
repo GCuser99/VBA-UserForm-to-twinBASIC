@@ -14,6 +14,7 @@ Class myAddIn
     Private WithEvents menuItem2Events  As VBIDE.CommandBarEvents
     Private WithEvents menuItem3Events  As VBIDE.CommandBarEvents
     Private isConnected As Boolean
+    Private Const MENU_BAR= 1
 
     Sub OnConnection(ByVal Application As Object, _
         ByVal ConnectMode As ext_ConnectMode, _
@@ -68,7 +69,8 @@ Class myAddIn
         Dim menuItem2 As CommandBarButton
         Dim menuItem3 As CommandBarButton
         
-        Set menu = vbe.CommandBars("Menu Bar").Controls.Add(Type:=msoControlPopup)
+        Set menu = vbe.CommandBars(MENU_BAR).Controls.Add(Type:=msoControlPopup)
+
         With menu
             menu.Caption = "twin&BASIC Tools"
             menu.Tag = "twinBASICTools"
@@ -97,7 +99,7 @@ Class myAddIn
         'also can clean up menu manually in vbide during debugging by rmb click on menu
         'Customize->Menu Bar->Reset
         'vbe.CommandBars("Menu Bar").Reset 'this will clean up all 
-        vbe.CommandBars("Menu Bar").Controls("twinBASIC Tools").Delete
+        vbe.CommandBars(MENU_BAR).Controls("twinBASIC Tools").Delete
     End Sub
 
     Private Sub menuItem1Events_Click(ByVal CommandBarControl As Object, _
