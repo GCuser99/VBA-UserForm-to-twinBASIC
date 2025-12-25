@@ -5,7 +5,7 @@ A VBIDE add-in that converts VBA UserForms for use in [twinBASIC](https://twinba
 
 The [twinBASIC](https://twinbasic.com/preview.html) (in Beta) does not yet support VBA UserForms. It does however have its own excellent VB6-compatible native Form designer and associated controls. This simple VBIDE add-in for MS Office applications converts a UserForm, its controls, images, and code into a twinBASIC form that can be imported directly into twinBASIC. 
 
-This tool, compiled in twinBASIC, queries the state of the UserForm and each of its child controls at design time and builds the closest twinBASIC equivalent. For non-MS Forms controls or MS Forms controls not supported (see below), a twinBASIC Label or Frame control is substituted to flag the missing control. UserForm code is translated and exported in a format that can be imported into twinBASIC, along with the form. 
+This tool, compiled in twinBASIC, queries the state of the UserForm and each of its child controls at design time and builds the closest twinBASIC equivalent. For non-MS Forms controls or MS Forms controls not supported (see below), a twinBASIC Label or Frame control is substituted to flag the missing control. UserForm code is translated and exported in a format that can be imported into twinBASIC, along with the form. **WARNING: This tool does not convert MS Access Forms.**
 
 The resulting imported form and code may have to be tweaked in twinBASIC to work as desired, but at least the position and most property states will be converted, saving time and tedious effort.
 
